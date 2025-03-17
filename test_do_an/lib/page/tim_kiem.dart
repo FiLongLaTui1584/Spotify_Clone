@@ -9,20 +9,42 @@ class TimKiem extends StatefulWidget {
 }
 
 class _TimKiemState extends State<TimKiem> {
-  final GlobalKey<ScaffoldState> _scaffoldKey =
-      GlobalKey<ScaffoldState>(); // Thêm key
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      key: _scaffoldKey, // Gán key vào Scaffold
+      key: _scaffoldKey,
       backgroundColor: Color.fromRGBO(18, 18, 18, 1),
       drawer: NavigationWidget(),
+      appBar: AppBar(
+        backgroundColor: Color.fromRGBO(18, 18, 18, 1),
+        leading: GestureDetector(
+          onTap: () {
+            _scaffoldKey.currentState?.openDrawer();
+          },
+          child: Container(
+            margin: EdgeInsets.only(left: 15), // Đẩy avatar sang phải
+            child: CircleAvatar(
+              radius: 25,
+              backgroundImage: AssetImage('assets/images/avatar.png'),
+            ),
+          ),
+        ),
+        title: const Text(
+          'Tìm kiếm',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            fontFamily: 'Arial',
+            color: Colors.white,
+          ),
+        ),
+      ),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildHeader(),
             const SizedBox(height: 20),
             _buildSearchBar(),
             const SizedBox(height: 20),
@@ -37,40 +59,6 @@ class _TimKiemState extends State<TimKiem> {
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10),
         child: CustomMusicBar(),
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.only(
-        left: 15.0,
-        right: 15.0,
-        top: 70.0,
-        bottom: 0.0,
-      ),
-      child: Row(
-        children: [
-          GestureDetector(
-            onTap: () {
-              _scaffoldKey.currentState
-                  ?.openDrawer(); // Mở Drawer khi nhấn vào avatar
-            },
-            child: CircleAvatar(
-              radius: 20,
-              backgroundImage: AssetImage('assets/images/avatar.png'),
-            ),
-          ),
-          const SizedBox(width: 20),
-          const Text(
-            'Tìm kiếm',
-            style: TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'Arial'),
-          ),
-        ],
       ),
     );
   }

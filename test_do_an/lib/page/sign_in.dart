@@ -203,7 +203,7 @@ class AccountQuestion extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(
-      'Bạn đã có tài khoản?',
+      'Bạn chưa có tài khoản?',
       style: TextStyle(
         color: Color.fromRGBO(255, 255, 255, 1),
         fontFamily: 'Arial',

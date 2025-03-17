@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:test_do_an/component/create_playlist_sheet.dart';
+import 'package:test_do_an/page/playlist_detail.dart';
 import '/component/custom_music_bar.dart';
 import '/component/custom_drawer_nav.dart';
 
@@ -37,7 +39,7 @@ class _ThuVienState extends State<ThuVien> {
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.only(left: 15, right: 15, top: 70, bottom: 20),
+      padding: const EdgeInsets.only(left: 15, right: 15, top: 56, bottom: 20),
       child: Row(
         children: [
           GestureDetector(
@@ -47,7 +49,7 @@ class _ThuVienState extends State<ThuVien> {
               backgroundImage: AssetImage('assets/images/avatar.png'),
             ),
           ),
-          const SizedBox(width: 20),
+          const SizedBox(width: 15),
           const Text(
             'Thư viện',
             style: TextStyle(
@@ -59,7 +61,18 @@ class _ThuVienState extends State<ThuVien> {
           Spacer(),
           Icon(Icons.search, color: Colors.white),
           const SizedBox(width: 15),
-          Icon(Icons.add, color: Colors.white),
+          IconButton(
+            icon: Icon(Icons.add, color: Colors.white),
+            onPressed: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: false, // Mở rộng full màn hình nếu cần
+                backgroundColor: Colors.transparent, // Làm trong suốt nền
+                builder: (context) =>
+                    CreatePlaylistSheet(), // Gọi file Bottom Sheet
+              );
+            },
+          ),
         ],
       ),
     );
@@ -96,7 +109,7 @@ class _ThuVienState extends State<ThuVien> {
     return Container(
       padding: EdgeInsets.symmetric(vertical: 8, horizontal: 15),
       decoration: BoxDecoration(
-        color: isSelected ? Color.fromRGBO(31, 214, 98, 1) : Colors.grey[800],
+        color: isSelected ? Colors.green : Colors.grey[800],
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
@@ -140,18 +153,19 @@ class _ThuVienState extends State<ThuVien> {
     );
   }
 
-//Danh sách album bài háthát
+//Danh sách album bài hát
   Widget _buildAlbumList() {
     final List<Map<String, String>> songs = [
       {'name': 'Danh sách phát #1', 'image': 'assets/images/song_icon.png'},
       {'name': 'Danh sách phát #2', 'image': 'assets/images/song_icon.png'},
       {'name': 'Danh sách phát #3', 'image': 'assets/images/song_icon.png'},
       {'name': 'Danh sách phát #4', 'image': 'assets/images/song_icon.png'},
-      {'name': 'Danh sách phát #1', 'image': 'assets/images/song_icon.png'},
-      {'name': 'Danh sách phát #2', 'image': 'assets/images/song_icon.png'},
-      {'name': 'Danh sách phát #3', 'image': 'assets/images/song_icon.png'},
-      {'name': 'Danh sách phát #4', 'image': 'assets/images/song_icon.png'},
+      {'name': 'Danh sách phát #5', 'image': 'assets/images/song_icon.png'},
+      {'name': 'Danh sách phát #6', 'image': 'assets/images/song_icon.png'},
+      {'name': 'Danh sách phát #7', 'image': 'assets/images/song_icon.png'},
+      {'name': 'Danh sách phát #8', 'image': 'assets/images/song_icon.png'},
     ];
+
     return Expanded(
       child: isGridView
           ? GridView.builder(
@@ -163,82 +177,102 @@ class _ThuVienState extends State<ThuVien> {
               ),
               itemCount: songs.length,
               itemBuilder: (context, index) {
-                return _buildGridAlbumItem(songs[index]);
+                return _buildGridAlbumItem(songs[index], context);
               },
             )
           : ListView.builder(
               padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
               itemCount: songs.length,
               itemBuilder: (context, index) {
-                return _buildListAlbumItem(songs[index]);
+                return _buildListAlbumItem(songs[index], context);
               },
             ),
     );
   }
 
-  Widget _buildListAlbumItem(Map<String, String> artist) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          ClipRRect(
-            child: Image.asset(
-              artist['image']!,
-              width: 70, // Kích thước vuông
-              height: 70,
-              fit: BoxFit.cover,
-            ),
+  Widget _buildListAlbumItem(Map<String, String> album, BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PlaylistDetailPage(),
           ),
-          const SizedBox(width: 15),
-          Text(
-            artist['name']!,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: [
+            ClipRRect(
+              child: Image.asset(
+                album['image']!, // Sử dụng ảnh từ dữ liệu
+                width: 70,
+                height: 70,
+                fit: BoxFit.cover,
+              ),
             ),
-          ),
-          Spacer(),
-          Text(
-            'Album',
-            style: TextStyle(
-              color: Colors.grey,
-              fontSize: 14,
+            const SizedBox(width: 15),
+            Text(
+              album['name']!, // Hiển thị tên album từ dữ liệu
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+              ),
             ),
-          ),
-        ],
+            Spacer(),
+            Text(
+              'Album',
+              style: TextStyle(
+                color: Colors.grey,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildGridAlbumItem(Map<String, String> artist) {
-    return Column(
-      children: [
-        ClipRRect(
-          child: Image.asset(
-            artist['image']!,
-            width: 90, // Kích thước vuông
-            height: 90,
-            fit: BoxFit.cover,
+  Widget _buildGridAlbumItem(Map<String, String> album, BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PlaylistDetailPage(),
           ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          artist['name']!,
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
+        );
+      },
+      child: Column(
+        children: [
+          ClipRRect(
+            child: Image.asset(
+              album['image']!, // Sử dụng ảnh từ dữ liệu
+              width: 90,
+              height: 90,
+              fit: BoxFit.cover,
+            ),
           ),
-          textAlign: TextAlign.center,
-        ),
-        Text(
-          'Album',
-          style: TextStyle(
-            color: Colors.grey,
-            fontSize: 10,
+          const SizedBox(height: 8),
+          Text(
+            album['name']!, // Hiển thị tên album từ dữ liệu
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
           ),
-        ),
-      ],
+          Text(
+            'Album',
+            style: TextStyle(
+              color: Colors.grey,
+              fontSize: 10,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
