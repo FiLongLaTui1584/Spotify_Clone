@@ -21,6 +21,7 @@ class _TrangChuState extends State<TrangChu> {
         child: Column(
           children: <Widget>[
             _buildHeader(),
+            SizedBox(height: 20),
             _buildSection(),
             _build_3_album(),
           ],
@@ -77,6 +78,7 @@ class _TrangChuState extends State<TrangChu> {
         bottom: 20.0,
       ),
       child: GridView.builder(
+        padding: EdgeInsets.zero,
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
           crossAxisSpacing: 10,

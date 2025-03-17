@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../component/edit_profile.dart';
 import '/component/custom_music_bar.dart';
 import '/component/custom_drawer_nav.dart';
 
@@ -101,14 +102,20 @@ class _AccountPageState extends State<AccountPage> {
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
           OutlinedButton(
-            style: OutlinedButton.styleFrom(
-              side: BorderSide(color: Colors.white),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20)),
-            ),
-            onPressed: () {},
-            child: Text('Chỉnh sửa', style: TextStyle(color: Colors.white)),
-          )
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: Colors.white),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20)),
+              ),
+              onPressed: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true, // Cho phép mở toàn màn hình
+                  backgroundColor: Colors.transparent, // Làm trong suốt nền
+                  builder: (context) => EditProfilePage(),
+                );
+              },
+              child: Text('Chỉnh sửa', style: TextStyle(color: Colors.white)))
         ],
       ),
     );

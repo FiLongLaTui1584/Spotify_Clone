@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../component/tim_kiem_gan_day.dart';
 import '/component/custom_music_bar.dart';
 import '/component/custom_drawer_nav.dart';
 
@@ -76,23 +77,43 @@ class _TimKiemState extends State<TimKiem> {
 
   Widget _buildSearchBar() {
     return Padding(
-      padding: const EdgeInsets.only(
-        left: 15.0,
-        right: 15.0,
-      ),
-      child: TextField(
-        decoration: InputDecoration(
-          hintText: 'Bạn muốn nghe gì?',
-          hintStyle: const TextStyle(color: Colors.grey),
-          filled: true,
-          fillColor: Colors.white,
-          prefixIcon: const Icon(Icons.search, color: Colors.black),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(15),
-            borderSide: BorderSide.none,
+      padding: const EdgeInsets.only(left: 15.0, right: 15.0),
+      child: GestureDetector(
+        onTap: () {
+          Navigator.of(context).push(_createFadeRoute());
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 15),
+          height: 50,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(25),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.search, color: Colors.black),
+              const SizedBox(width: 10),
+              const Text(
+                'Bạn muốn nghe gì?',
+                style: TextStyle(color: Colors.grey),
+              ),
+            ],
           ),
         ),
       ),
+    );
+  }
+
+// Hiệu ứng chuyển fade in
+  Route _createFadeRoute() {
+    return PageRouteBuilder(
+      pageBuilder: (context, animation, secondaryAnimation) => TimKiemGanDay(),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        return FadeTransition(
+          opacity: animation,
+          child: child,
+        );
+      },
     );
   }
 
@@ -235,7 +256,9 @@ class _TimKiemState extends State<TimKiem> {
             style: TextStyle(
                 color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
           ),
+          SizedBox(height: 15),
           GridView.builder(
+            padding: EdgeInsets.zero,
             shrinkWrap: true, // Để tránh lỗi cuộn vô hạn
             physics:
                 const NeverScrollableScrollPhysics(), // Không cuộn riêng lẻ

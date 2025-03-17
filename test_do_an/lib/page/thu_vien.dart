@@ -9,6 +9,8 @@ class ThuVien extends StatefulWidget {
 
 class _ThuVienState extends State<ThuVien> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  bool isGridView = false;
+  bool isPlaylistSelected = true; // Mặc định chọn "Danh sách phát"
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +23,9 @@ class _ThuVienState extends State<ThuVien> {
         children: [
           _buildHeader(),
           _buildCategoryButtons(),
-          _buildArtistList(),
+          SizedBox(height: 10),
+          _buildSortBar(),
+          isPlaylistSelected ? _buildAlbumList() : _buildArtistList(),
         ],
       ),
       bottomNavigationBar: Padding(
@@ -66,9 +70,23 @@ class _ThuVienState extends State<ThuVien> {
       padding: const EdgeInsets.symmetric(horizontal: 15),
       child: Row(
         children: [
-          _buildCategoryButton('Nghệ sĩ', true),
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                isPlaylistSelected = false;
+              });
+            },
+            child: _buildCategoryButton('Nghệ sĩ', !isPlaylistSelected),
+          ),
           const SizedBox(width: 10),
-          _buildCategoryButton('Danh sách phát', false),
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                isPlaylistSelected = true;
+              });
+            },
+            child: _buildCategoryButton('Danh sách phát', isPlaylistSelected),
+          ),
         ],
       ),
     );
@@ -91,6 +109,140 @@ class _ThuVienState extends State<ThuVien> {
     );
   }
 
+  Widget _buildSortBar() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+      child: Row(
+        children: [
+          Icon(Icons.sort, color: Colors.white),
+          SizedBox(width: 10),
+          Text(
+            'Thứ tự chữ cái',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+            ),
+          ),
+          Spacer(),
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                isGridView = !isGridView;
+              });
+            },
+            child: Icon(
+              isGridView ? Icons.list : Icons.grid_view,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+//Danh sách album bài háthát
+  Widget _buildAlbumList() {
+    final List<Map<String, String>> songs = [
+      {'name': 'Danh sách phát #1', 'image': 'assets/images/song_icon.png'},
+      {'name': 'Danh sách phát #2', 'image': 'assets/images/song_icon.png'},
+      {'name': 'Danh sách phát #3', 'image': 'assets/images/song_icon.png'},
+      {'name': 'Danh sách phát #4', 'image': 'assets/images/song_icon.png'},
+      {'name': 'Danh sách phát #1', 'image': 'assets/images/song_icon.png'},
+      {'name': 'Danh sách phát #2', 'image': 'assets/images/song_icon.png'},
+      {'name': 'Danh sách phát #3', 'image': 'assets/images/song_icon.png'},
+      {'name': 'Danh sách phát #4', 'image': 'assets/images/song_icon.png'},
+    ];
+    return Expanded(
+      child: isGridView
+          ? GridView.builder(
+              padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+              ),
+              itemCount: songs.length,
+              itemBuilder: (context, index) {
+                return _buildGridAlbumItem(songs[index]);
+              },
+            )
+          : ListView.builder(
+              padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+              itemCount: songs.length,
+              itemBuilder: (context, index) {
+                return _buildListAlbumItem(songs[index]);
+              },
+            ),
+    );
+  }
+
+  Widget _buildListAlbumItem(Map<String, String> artist) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          ClipRRect(
+            child: Image.asset(
+              artist['image']!,
+              width: 70, // Kích thước vuông
+              height: 70,
+              fit: BoxFit.cover,
+            ),
+          ),
+          const SizedBox(width: 15),
+          Text(
+            artist['name']!,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+            ),
+          ),
+          Spacer(),
+          Text(
+            'Album',
+            style: TextStyle(
+              color: Colors.grey,
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGridAlbumItem(Map<String, String> artist) {
+    return Column(
+      children: [
+        ClipRRect(
+          child: Image.asset(
+            artist['image']!,
+            width: 90, // Kích thước vuông
+            height: 90,
+            fit: BoxFit.cover,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          artist['name']!,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        Text(
+          'Album',
+          style: TextStyle(
+            color: Colors.grey,
+            fontSize: 10,
+          ),
+        ),
+      ],
+    );
+  }
+
+//Danh sách nghệ sĩ
   Widget _buildArtistList() {
     final List<Map<String, String>> artists = [
       {'name': 'Alan Walker', 'image': 'assets/images/random.png'},
@@ -101,6 +253,7 @@ class _ThuVienState extends State<ThuVien> {
       {'name': 'Bruno Mars', 'image': 'assets/images/random.png'},
       {'name': 'Changg', 'image': 'assets/images/random.png'},
       {'name': 'Joji', 'image': 'assets/images/random.png'},
+      {'name': 'JVKE', 'image': 'assets/images/random.png'},
       {'name': 'Alan Walker', 'image': 'assets/images/random.png'},
       {'name': 'AMEE', 'image': 'assets/images/random.png'},
       {'name': 'ANH TRAI "SAY HI"', 'image': 'assets/images/random.png'},
@@ -109,16 +262,30 @@ class _ThuVienState extends State<ThuVien> {
       {'name': 'Bruno Mars', 'image': 'assets/images/random.png'},
       {'name': 'Changg', 'image': 'assets/images/random.png'},
       {'name': 'Joji', 'image': 'assets/images/random.png'},
+      {'name': 'JVKE', 'image': 'assets/images/random.png'}
     ];
 
     return Expanded(
-      child: ListView.builder(
-        padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-        itemCount: artists.length,
-        itemBuilder: (context, index) {
-          return _buildArtistItem(artists[index]);
-        },
-      ),
+      child: isGridView
+          ? GridView.builder(
+              padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                crossAxisSpacing: 15,
+                mainAxisSpacing: 15,
+              ),
+              itemCount: artists.length,
+              itemBuilder: (context, index) {
+                return _buildArtistGridItem(artists[index]);
+              },
+            )
+          : ListView.builder(
+              padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+              itemCount: artists.length,
+              itemBuilder: (context, index) {
+                return _buildArtistItem(artists[index]);
+              },
+            ),
     );
   }
 
@@ -149,6 +316,34 @@ class _ThuVienState extends State<ThuVien> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildArtistGridItem(Map<String, String> artist) {
+    return Column(
+      children: [
+        CircleAvatar(
+          radius: 45,
+          backgroundImage: AssetImage(artist['image']!),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          artist['name']!,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        Text(
+          'Nghệ sĩ',
+          style: TextStyle(
+            color: Colors.grey,
+            fontSize: 10,
+          ),
+        ),
+      ],
     );
   }
 }
