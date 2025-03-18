@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:test_do_an/component/playlist_options_bottomsheet.dart';
 
-class PlaylistDetailPage extends StatelessWidget {
+class Artist_Album_Detail_Page extends StatelessWidget {
   final List<Map<String, dynamic>> songs = [
     {
       'title': 'Faded',
@@ -87,7 +86,7 @@ class PlaylistDetailPage extends StatelessWidget {
                 width: 320,
                 decoration: BoxDecoration(color: Colors.grey[800]),
                 child: Image.asset(
-                  'assets/images/song_icon.png',
+                  'assets/images/random.png',
                   fit: BoxFit.cover,
                 ),
               ),
@@ -99,13 +98,23 @@ class PlaylistDetailPage extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      "Danh sách phát #1",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    Row(
+                      children: [
+                        Text(
+                          "This is Alan Walker",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(width: 20),
+                        Icon(
+                          Icons.add_circle_outline,
+                          color: Colors.white,
+                          size: 26,
+                        ),
+                      ],
                     ),
                     SizedBox(height: 5),
                     Row(
@@ -113,27 +122,21 @@ class PlaylistDetailPage extends StatelessWidget {
                         CircleAvatar(
                           radius: 12,
                           backgroundImage:
-                              AssetImage('assets/images/avatar.png'),
+                              AssetImage('assets/images/random.png'),
                         ),
                         SizedBox(width: 8),
-                        Text("FiLongLàTui",
+                        Text("Alan Walker",
                             style: TextStyle(color: Colors.grey)),
-                        SizedBox(width: 10),
-                        IconButton(
-                          icon: Icon(Icons.more_horiz, color: Colors.white),
-                          onPressed: () =>
-                              showPlaylistOptionsBottomSheet(context),
-                        ),
                       ],
                     ),
                   ],
                 ),
                 Container(
-                  width: 60, // Đảm bảo hình vuông
+                  width: 60,
                   height: 60,
                   decoration: BoxDecoration(
                     color: Colors.green,
-                    shape: BoxShape.circle, // Đảm bảo hình tròn
+                    shape: BoxShape.circle,
                   ),
                   child: IconButton(
                     icon: Icon(
@@ -156,9 +159,8 @@ class PlaylistDetailPage extends StatelessWidget {
             ),
             SizedBox(height: 10),
             ListView.builder(
-              shrinkWrap: true, // Đảm bảo không chiếm toàn bộ không gian
-              physics:
-                  NeverScrollableScrollPhysics(), // Vô hiệu hóa cuộn của ListView
+              shrinkWrap: true,
+              physics: NeverScrollableScrollPhysics(),
               itemCount: songs.length,
               itemBuilder: (context, index) {
                 final song = songs[index];
@@ -197,17 +199,6 @@ class PlaylistDetailPage extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-
-  void showPlaylistOptionsBottomSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Color.fromRGBO(18, 18, 18, 1),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => PlaylistOptionsBottomSheet(),
     );
   }
 }

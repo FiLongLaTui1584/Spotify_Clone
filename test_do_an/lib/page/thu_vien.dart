@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:test_do_an/component/create_playlist_sheet.dart';
+import 'package:test_do_an/page/artist_info.dart';
 import 'package:test_do_an/page/playlist_detail.dart';
 import '/component/custom_music_bar.dart';
 import '/component/custom_drawer_nav.dart';
@@ -324,60 +325,80 @@ class _ThuVienState extends State<ThuVien> {
   }
 
   Widget _buildArtistItem(Map<String, String> artist) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 25,
-            backgroundImage: AssetImage(artist['image']!),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ArtistInfoPage(),
           ),
-          const SizedBox(width: 15),
-          Text(
-            artist['name']!,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 25,
+              backgroundImage: AssetImage(artist['image']!),
             ),
-          ),
-          Spacer(),
-          Text(
-            'Nghệ sĩ',
-            style: TextStyle(
-              color: Colors.grey,
-              fontSize: 14,
+            const SizedBox(width: 15),
+            Text(
+              artist['name']!,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+              ),
             ),
-          ),
-        ],
+            Spacer(),
+            Text(
+              'Nghệ sĩ',
+              style: TextStyle(
+                color: Colors.grey,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildArtistGridItem(Map<String, String> artist) {
-    return Column(
-      children: [
-        CircleAvatar(
-          radius: 45,
-          backgroundImage: AssetImage(artist['image']!),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          artist['name']!,
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ArtistInfoPage(),
           ),
-          textAlign: TextAlign.center,
-        ),
-        Text(
-          'Nghệ sĩ',
-          style: TextStyle(
-            color: Colors.grey,
-            fontSize: 10,
+        );
+      },
+      child: Column(
+        children: [
+          CircleAvatar(
+            radius: 45,
+            backgroundImage: AssetImage(artist['image']!),
           ),
-        ),
-      ],
+          const SizedBox(height: 8),
+          Text(
+            artist['name']!,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          Text(
+            'Nghệ sĩ',
+            style: TextStyle(
+              color: Colors.grey,
+              fontSize: 10,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
