@@ -99,7 +99,7 @@ class PlaylistDetailPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "Danh sách phát thứ 1 của tôi",
+                      "Danh sách phát #1",
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 22,

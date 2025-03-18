@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:test_do_an/page/settings_page.dart';
 import '../component/edit_profile.dart';
 import '/component/custom_music_bar.dart';
 import '/component/custom_drawer_nav.dart';
@@ -42,7 +43,14 @@ class _AccountPageState extends State<AccountPage> {
         alignment: Alignment.centerRight,
         child: IconButton(
           icon: Icon(Icons.settings, color: Colors.white, size: 28),
-          onPressed: () {},
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => SettingsPage(),
+              ),
+            );
+          },
         ),
       ),
     );

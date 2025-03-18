@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:test_do_an/page/new_content_page.dart';
+import 'package:test_do_an/page/recent_page.dart';
 
 class NavigationWidget extends StatefulWidget {
   const NavigationWidget({super.key});
@@ -78,7 +80,12 @@ class _NavigationWidgetState extends State<NavigationWidget> {
                 style: TextStyle(color: Colors.white, fontSize: 18),
               ),
               onTap: () {
-                // Handle the tap
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => NewContentPage(),
+                  ),
+                );
               },
             ),
             SizedBox(height: 18),
@@ -93,7 +100,12 @@ class _NavigationWidgetState extends State<NavigationWidget> {
                 style: TextStyle(color: Colors.white, fontSize: 18),
               ),
               onTap: () {
-                // Handle the tap
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => RecentPage(),
+                  ),
+                );
               },
             ),
           ],
