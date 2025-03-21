@@ -10,7 +10,11 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_svg: ^2.0.17  # Phiên bản mới nhất của flutter_svg
-
+  sqflite: ^2.3.0          # Để sử dụng SQLite
+  path_provider: ^2.1.1   # Để lấy đường dẫn lưu trữ
+  path: ^1.8.3           # Để xử lý đường dẫn
+  shared_preferences: ^2.2.2  # Để lưu trạng thái đăng nhập
+  
 dev_dependencies:
   flutter_test:
     sdk: flutter
