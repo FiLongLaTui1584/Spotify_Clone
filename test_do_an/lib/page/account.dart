@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:test_do_an/helper/user_session.dart';
 import 'package:test_do_an/page/settings_page.dart';
-import '../component/edit_profile.dart';
+import 'package:test_do_an/component/edit_profile.dart';
 import '/component/custom_music_bar.dart';
 import '/component/custom_drawer_nav.dart';
+import 'dart:io'; // Import để dùng File
 
 class AccountPage extends StatefulWidget {
   @override
@@ -46,9 +48,7 @@ class _AccountPageState extends State<AccountPage> {
           onPressed: () {
             Navigator.push(
               context,
-              MaterialPageRoute(
-                builder: (context) => SettingsPage(),
-              ),
+              MaterialPageRoute(builder: (context) => SettingsPage()),
             );
           },
         ),
@@ -57,26 +57,26 @@ class _AccountPageState extends State<AccountPage> {
   }
 
   Widget _buildHeader() {
+    String userName = UserSession.currentUser?['name'] ?? 'Người dùng'; // Lấy tên từ database
+    String? avatarPath = UserSession.currentUser?['avatar']; // Lấy avatar từ database
+
     return Padding(
-      padding: const EdgeInsets.only(
-        left: 15.0,
-        right: 15.0,
-        top: 0.0,
-        bottom: 0.0,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 15.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
           CircleAvatar(
             radius: 60,
-            backgroundImage: AssetImage('assets/images/avatar.png'),
+            backgroundImage: avatarPath != null && avatarPath.isNotEmpty
+                ? FileImage(File(avatarPath)) // Sử dụng File từ dart:io
+                : AssetImage('assets/images/avatar.png') as ImageProvider,
           ),
           const SizedBox(width: 15),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'FiLongLàTui',
+                userName, // Hiển thị tên thật
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 22,
@@ -85,11 +85,8 @@ class _AccountPageState extends State<AccountPage> {
               ),
               const SizedBox(height: 5),
               Text(
-                '0 người theo dõi - Đang theo dõi 37',
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 14,
-                ),
+                'Đang theo dõi 37',
+                style: TextStyle(color: Colors.grey, fontSize: 14),
               ),
             ],
           ),
@@ -100,30 +97,29 @@ class _AccountPageState extends State<AccountPage> {
 
   Widget _buildEditAndShareButtons() {
     return Padding(
-      padding: const EdgeInsets.only(
-        left: 20.0,
-        right: 15.0,
-        top: 0.0,
-        bottom: 0.0,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 15.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
           OutlinedButton(
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(color: Colors.white),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20)),
-              ),
-              onPressed: () {
-                showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true, // Cho phép mở toàn màn hình
-                  backgroundColor: Colors.transparent, // Làm trong suốt nền
-                  builder: (context) => EditProfilePage(),
-                );
-              },
-              child: Text('Chỉnh sửa', style: TextStyle(color: Colors.white)))
+            style: OutlinedButton.styleFrom(
+              side: BorderSide(color: Colors.white),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            ),
+            onPressed: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (context) => EditProfilePage(
+                  onProfileUpdated: () {
+                    setState(() {}); // Cập nhật giao diện sau khi chỉnh sửa
+                  },
+                ),
+              );
+            },
+            child: Text('Chỉnh sửa', style: TextStyle(color: Colors.white)),
+          ),
         ],
       ),
     );
@@ -145,10 +141,7 @@ class _AccountPageState extends State<AccountPage> {
           const SizedBox(height: 5),
           Text(
             'Hãy khám phá thêm nhạc mới ngay',
-            style: TextStyle(
-              color: Colors.grey,
-              fontSize: 14,
-            ),
+            style: TextStyle(color: Colors.grey, fontSize: 14),
           ),
         ],
       ),

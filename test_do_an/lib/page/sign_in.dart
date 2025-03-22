@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:test_do_an/helper/database_helper.dart';
+import 'package:test_do_an/helper/user_session.dart';
 import 'package:test_do_an/page/sign_up.dart';
 
 class SignIn extends StatefulWidget {
@@ -14,7 +15,6 @@ class _SignInState extends State<SignIn> {
   final TextEditingController _passwordController = TextEditingController();
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
 
-  // Hàm xử lý đăng nhập
   void _handleSignIn() async {
     String email = _emailController.text.trim();
     String password = _passwordController.text.trim();
@@ -26,14 +26,12 @@ class _SignInState extends State<SignIn> {
       return;
     }
 
-    print('Đang đăng nhập với email: $email'); // Debug
-
     Map<String, dynamic>? user = await _dbHelper.loginUser(email, password);
     if (user != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Đăng nhập thành công!')),
       );
-      // Chuyển hướng sang trang main
+      UserSession.currentUser = user; // Lưu thông tin user
       Navigator.pushReplacementNamed(context, '/main');
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -75,18 +73,14 @@ class _SignInState extends State<SignIn> {
   Widget _buildLogo(double width) => Container(
         width: 70,
         height: 70,
-        child: Center(
-            child: Image.asset('assets/images/logo.png', fit: BoxFit.fill)),
+        child: Center(child: Image.asset('assets/images/logo.png', fit: BoxFit.fill)),
       );
 
   Widget _buildTitle() => Text(
         'Đăng nhập vào Spotifree',
         textAlign: TextAlign.center,
         style: TextStyle(
-            color: Colors.white,
-            fontFamily: 'Arial',
-            fontSize: 30,
-            fontWeight: FontWeight.bold),
+            color: Colors.white, fontFamily: 'Arial', fontSize: 30, fontWeight: FontWeight.bold),
       );
 
   Widget _buildEmailField(double width) => FractionallySizedBox(
@@ -105,23 +99,19 @@ class _SignInState extends State<SignIn> {
                 child: SizedBox(
                   width: 25,
                   height: 25,
-                  child: Image.asset('assets/images/email_icon.png',
-                      fit: BoxFit.fill),
+                  child: Image.asset('assets/images/email_icon.png', fit: BoxFit.fill),
                 ),
               ),
               Expanded(
                 child: TextField(
-                  controller: _emailController, // Thêm controller
+                  controller: _emailController,
                   decoration: InputDecoration(
                     hintText: 'Email',
-                    hintStyle: TextStyle(
-                        color: Colors.grey, fontFamily: 'Arial', fontSize: 15),
+                    hintStyle: TextStyle(color: Colors.grey, fontFamily: 'Arial', fontSize: 15),
                     border: InputBorder.none,
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
                   ),
-                  style: TextStyle(
-                      color: Colors.white, fontFamily: 'Arial', fontSize: 15),
+                  style: TextStyle(color: Colors.white, fontFamily: 'Arial', fontSize: 15),
                   keyboardType: TextInputType.emailAddress,
                 ),
               ),
@@ -146,23 +136,19 @@ class _SignInState extends State<SignIn> {
                 child: SizedBox(
                   width: 25,
                   height: 25,
-                  child: Image.asset('assets/images/password_icon.png',
-                      fit: BoxFit.fill),
+                  child: Image.asset('assets/images/password_icon.png', fit: BoxFit.fill),
                 ),
               ),
               Expanded(
                 child: TextField(
-                  controller: _passwordController, // Thêm controller
+                  controller: _passwordController,
                   decoration: InputDecoration(
                     hintText: 'Mật khẩu',
-                    hintStyle: TextStyle(
-                        color: Colors.grey, fontFamily: 'Arial', fontSize: 15),
+                    hintStyle: TextStyle(color: Colors.grey, fontFamily: 'Arial', fontSize: 15),
                     border: InputBorder.none,
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
                   ),
-                  style: TextStyle(
-                      color: Colors.white, fontFamily: 'Arial', fontSize: 15),
+                  style: TextStyle(color: Colors.white, fontFamily: 'Arial', fontSize: 15),
                   obscureText: true,
                 ),
               ),
@@ -174,7 +160,7 @@ class _SignInState extends State<SignIn> {
   Widget _buildSignInButton(double width) => FractionallySizedBox(
         widthFactor: 0.8,
         child: GestureDetector(
-          onTap: _handleSignIn, // Gọi hàm đăng nhập
+          onTap: _handleSignIn,
           child: Container(
             height: width * 0.12,
             decoration: BoxDecoration(
@@ -198,13 +184,11 @@ class _SignInState extends State<SignIn> {
 
   Widget _buildAccountQuestion() => Text(
         'Bạn chưa có tài khoản?',
-        style:
-            TextStyle(color: Colors.white, fontFamily: 'Arial', fontSize: 15),
+        style: TextStyle(color: Colors.white, fontFamily: 'Arial', fontSize: 15),
       );
 
   Widget _buildSignUpButton(BuildContext context) => GestureDetector(
-        onTap: () => Navigator.push(
-            context, MaterialPageRoute(builder: (_) => SignUp())),
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SignUp())),
         child: Text(
           'Đăng ký',
           style: TextStyle(
