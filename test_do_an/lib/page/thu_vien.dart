@@ -4,6 +4,8 @@ import 'package:test_do_an/page/artist_info.dart';
 import 'package:test_do_an/page/playlist_detail.dart';
 import '/component/custom_music_bar.dart';
 import '/component/custom_drawer_nav.dart';
+import 'package:test_do_an/helper/user_session.dart'; // Import UserSession
+import 'dart:io'; // Import để dùng File
 
 class ThuVien extends StatefulWidget {
   @override
@@ -17,6 +19,11 @@ class _ThuVienState extends State<ThuVien> {
 
   @override
   Widget build(BuildContext context) {
+    // Lấy thông tin từ UserSession
+    String userName = UserSession.currentUser?['name'] ??
+        'Người dùng'; // Tên mặc định nếu null
+    String? avatarPath = UserSession.currentUser?['avatar']; // Đường dẫn avatar
+
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: Color.fromRGBO(18, 18, 18, 1),
@@ -24,7 +31,8 @@ class _ThuVienState extends State<ThuVien> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildHeader(),
+          _buildHeader(
+              userName, avatarPath), // Truyền thông tin vào _buildHeader
           _buildCategoryButtons(),
           SizedBox(height: 10),
           _buildSortBar(),
@@ -38,7 +46,7 @@ class _ThuVienState extends State<ThuVien> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(String userName, String? avatarPath) {
     return Padding(
       padding: const EdgeInsets.only(left: 15, right: 15, top: 56, bottom: 20),
       child: Row(
@@ -47,13 +55,16 @@ class _ThuVienState extends State<ThuVien> {
             onTap: () => _scaffoldKey.currentState?.openDrawer(),
             child: CircleAvatar(
               radius: 20,
-              backgroundImage: AssetImage('assets/images/avatar.png'),
+              backgroundImage: avatarPath != null && avatarPath.isNotEmpty
+                  ? FileImage(File(avatarPath)) // Avatar từ đường dẫn cục bộ
+                  : AssetImage('assets/images/avatar.png')
+                      as ImageProvider, // Avatar mặc định
             ),
           ),
           const SizedBox(width: 15),
-          const Text(
+          Text(
             'Thư viện',
-            style: TextStyle(
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 24,
               fontWeight: FontWeight.bold,

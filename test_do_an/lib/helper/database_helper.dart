@@ -24,83 +24,9 @@ class DatabaseHelper {
       path,
       version: 1,
       onCreate: (db, version) async {
-        print('Tạo các bảng trong database');
-        await db.execute('''
-          CREATE TABLE users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT NOT NULL UNIQUE,
-            password TEXT NOT NULL,
-            name TEXT NOT NULL,
-            avatar TEXT
-          )
-        ''');
-        await db.execute('''
-          CREATE TABLE artists (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            avatar TEXT,
-            bio TEXT,
-            createdAt TEXT
-          )
-        ''');
-        await db.execute('''
-          CREATE TABLE songs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
-            artistId INTEGER,
-            filePath TEXT NOT NULL,
-            lyrics TEXT,
-            avatar TEXT,
-            FOREIGN KEY (artistId) REFERENCES artists(id)
-          )
-        ''');
-        await db.execute('''
-          CREATE TABLE albums (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            userId INTEGER,
-            name TEXT NOT NULL,
-            isDefault INTEGER DEFAULT 0,
-            FOREIGN KEY (userId) REFERENCES users(id)
-          )
-        ''');
-        await db.execute('''
-          CREATE TABLE album_songs (
-            albumId INTEGER,
-            songId INTEGER,
-            FOREIGN KEY (albumId) REFERENCES albums(id),
-            FOREIGN KEY (songId) REFERENCES songs(id),
-            PRIMARY KEY (albumId, songId)
-          )
-        ''');
-        await db.execute('''
-          CREATE TABLE artist_albums (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            artistId INTEGER,
-            name TEXT NOT NULL,
-            releaseDate TEXT,
-            avatar TEXT,
-            FOREIGN KEY (artistId) REFERENCES artists(id)
-          )
-        ''');
-        await db.execute('''
-          CREATE TABLE artist_album_songs (
-            artistAlbumId INTEGER,
-            songId INTEGER,
-            FOREIGN KEY (artistAlbumId) REFERENCES artist_albums(id),
-            FOREIGN KEY (songId) REFERENCES songs(id),
-            PRIMARY KEY (artistAlbumId, songId)
-          )
-        ''');
-        await db.execute('''
-          CREATE TABLE followed_artists (
-            userId INTEGER,
-            artistId INTEGER,
-            FOREIGN KEY (userId) REFERENCES users(id),
-            FOREIGN KEY (artistId) REFERENCES artists(id),
-            PRIMARY KEY (userId, artistId)
-          )
-        ''');
+        print('Database mới được tạo (nếu không dùng file từ assets)');
       },
+      onUpgrade: (db, oldVersion, newVersion) async {},
     );
   }
 
@@ -112,10 +38,8 @@ class DatabaseHelper {
         {'username': username, 'password': password, 'name': name, 'avatar': avatar},
         conflictAlgorithm: ConflictAlgorithm.rollback,
       );
-      print('Đã thêm user: $username, ID: $result');
       return result;
     } catch (e) {
-      print('Lỗi khi đăng ký: $e');
       return -1;
     }
   }
@@ -130,11 +54,6 @@ class DatabaseHelper {
     return result.isNotEmpty ? result.first : null;
   }
 
-  Future<List<Map<String, dynamic>>> getSongs() async {
-    final db = await database;
-    return await db.query('songs');
-  }
-
   Future<int> updateUser(int id, String name, String? avatar) async {
     final db = await database;
     return await db.update(
@@ -143,5 +62,59 @@ class DatabaseHelper {
       where: 'id = ?',
       whereArgs: [id],
     );
+  }
+
+  // Hàm lấy bài hát hiện tại (dựa trên id)
+  Future<Map<String, dynamic>?> getSongById(int id) async {
+    final db = await database;
+    List<Map<String, dynamic>> songs = await db.query(
+      'songs',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+
+    if (songs.isNotEmpty) {
+      Map<String, dynamic> song = songs.first;
+      List<Map<String, dynamic>> artists = await db.query(
+        'artists',
+        where: 'id = ?',
+        whereArgs: [song['artistId']],
+      );
+      String artistName = artists.isNotEmpty ? artists.first['name'] : 'Unknown Artist';
+      return {
+        'id': song['id'],
+        'title': song['title'],
+        'artist': artistName,
+        'filePath': song['filePath'],
+        'avatar': song['avatar'],
+        'lyrics': song['lyrics'],
+      };
+    }
+    return null;
+  }
+
+  // Hàm lấy tất cả bài hát
+  Future<List<Map<String, dynamic>>> getAllSongs() async {
+    final db = await database;
+    List<Map<String, dynamic>> songs = await db.query('songs');
+
+    List<Map<String, dynamic>> result = [];
+    for (var song in songs) {
+      List<Map<String, dynamic>> artists = await db.query(
+        'artists',
+        where: 'id = ?',
+        whereArgs: [song['artistId']],
+      );
+      String artistName = artists.isNotEmpty ? artists.first['name'] : 'Unknown Artist';
+      result.add({
+        'id': song['id'],
+        'title': song['title'],
+        'artist': artistName,
+        'filePath': song['filePath'],
+        'avatar': song['avatar'],
+        'lyrics': song['lyrics'],
+      });
+    }
+    return result;
   }
 }

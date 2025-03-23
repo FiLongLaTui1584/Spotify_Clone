@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '/component/custom_music_bar.dart';
 import '/component/custom_drawer_nav.dart';
+import 'package:test_do_an/helper/user_session.dart'; // Import UserSession
+import 'dart:io'; // Import để dùng File
 
 class TrangChu extends StatefulWidget {
   @override
@@ -12,6 +14,11 @@ class _TrangChuState extends State<TrangChu> {
 
   @override
   Widget build(BuildContext context) {
+    // Lấy thông tin từ UserSession
+    String userName = UserSession.currentUser?['name'] ??
+        'Người dùng'; // Tên mặc định nếu null
+    String? avatarPath = UserSession.currentUser?['avatar']; // Đường dẫn avatar
+
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: Color.fromRGBO(18, 18, 18, 1),
@@ -26,12 +33,15 @@ class _TrangChuState extends State<TrangChu> {
             margin: EdgeInsets.only(left: 15), // Đẩy ảnh sang phải 10px
             child: CircleAvatar(
               radius: 25,
-              backgroundImage: AssetImage('assets/images/avatar.png'),
+              backgroundImage: avatarPath != null && avatarPath.isNotEmpty
+                  ? FileImage(File(avatarPath)) // Avatar từ đường dẫn cục bộ
+                  : AssetImage('assets/images/avatar.png')
+                      as ImageProvider, // Avatar mặc định
             ),
           ),
         ),
         title: Text(
-          'Xin chào, Trần Phi Long!',
+          'Xin chào, $userName!', // Hiển thị tên thật
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
