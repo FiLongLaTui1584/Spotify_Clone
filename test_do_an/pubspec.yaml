@@ -13,7 +13,7 @@ dependencies:
   sqflite: ^2.3.0          # Để sử dụng SQLite
   path_provider: ^2.1.1   # Để lấy đường dẫn lưu trữ
   path: ^1.8.3           # Để xử lý đường dẫn
-  shared_preferences: ^2.2.2  # Để lưu trạng thái đăng nhập
+  shared_preferences: ^2.2.3  # Để lưu trạng thái đăng nhập
   image_picker: ^1.0.7
   just_audio: ^0.9.36 # Thêm gói này để phát nhạc
   palette_generator: ^0.3.3+3 # Thêm gói này để trích xuất màu từ hình ảnh

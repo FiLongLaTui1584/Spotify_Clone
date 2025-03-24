@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:test_do_an/helper/audio_player_manager.dart';
+import 'package:just_audio/just_audio.dart';
+import 'dart:convert'; // Để parse JSON lyrics
+import 'package:palette_generator/palette_generator.dart'; // Để trích xuất màu từ ảnh bìa
 
 class SongDetailPage extends StatefulWidget {
   @override
@@ -6,8 +10,185 @@ class SongDetailPage extends StatefulWidget {
 }
 
 class _SongDetailPageState extends State<SongDetailPage> {
+  final AudioPlayerManager _audioManager = AudioPlayerManager();
   double _currentTime = 0; // Thời gian hiện tại của bài hát
-  final double _totalDuration = 196; // Tổng thời gian bài hát (196 giây)
+  double _totalDuration = 0; // Tổng thời gian bài hát
+  Color _lyricBoxColor = Colors.red; // Màu mặc định cho hộp lyric
+  Color _textColor = Colors.white; // Màu chữ mặc định
+  List<MapEntry<String, String>> _lyricsList = []; // Danh sách lời bài hát với thời gian
+  int _currentLyricIndex = -1; // Chỉ số câu hát đang phát
+  final ScrollController _scrollController = ScrollController(); // Controller để cuộn lời bài hát
+  List<double> _lineHeights = []; // Lưu chiều cao của từng dòng lyric
+  List<GlobalKey> _lineKeys = []; // GlobalKey để đo chiều cao từng dòng
+
+  @override
+  void initState() {
+    super.initState();
+    _setupAudioListeners();
+    _updateLyricBoxColor();
+    _parseLyricsToList();
+  }
+
+  void _setupAudioListeners() {
+    // Lấy tổng thời gian bài hát
+    _totalDuration = _audioManager.audioPlayer.duration?.inSeconds.toDouble() ?? 196;
+    // Lắng nghe vị trí phát nhạc
+    _audioManager.audioPlayer.positionStream.listen((position) {
+      if (mounted) {
+        setState(() {
+          _currentTime = position.inSeconds.toDouble();
+          _updateCurrentLyricIndex();
+        });
+      }
+    });
+    // Lắng nghe thay đổi trạng thái (play/pause, skip bài)
+    _audioManager.audioPlayer.playerStateStream.listen((state) {
+      if (mounted) {
+        setState(() {
+          _totalDuration = _audioManager.audioPlayer.duration?.inSeconds.toDouble() ?? 196;
+          _updateLyricBoxColor(); // Cập nhật màu hộp lyric khi đổi bài
+          _parseLyricsToList(); // Cập nhật danh sách lời bài hát khi đổi bài
+        });
+      }
+    });
+  }
+
+  Future<void> _updateLyricBoxColor() async {
+    if (_audioManager.currentSong != null) {
+      final String avatarPath = _audioManager.currentSong!['avatar'] ?? 'assets/images/random.png';
+      try {
+        final PaletteGenerator paletteGenerator = await PaletteGenerator.fromImageProvider(
+          AssetImage(avatarPath),
+          size: const Size(418, 418),
+          maximumColorCount: 20,
+        );
+
+        Color dominantColor = paletteGenerator.dominantColor?.color ?? Colors.red;
+        double luminance = dominantColor.computeLuminance();
+        Color newTextColor = luminance < 0.5 ? Colors.white : Colors.black;
+
+        setState(() {
+          _lyricBoxColor = dominantColor;
+          _textColor = newTextColor;
+        });
+      } catch (e) {
+        print('Lỗi khi trích xuất màu: $e');
+        setState(() {
+          _lyricBoxColor = Colors.red; // Màu mặc định nếu lỗi
+          _textColor = Colors.white;
+        });
+      }
+    }
+  }
+
+  // Parse lời bài hát từ JSON thành danh sách
+  void _parseLyricsToList() {
+    _lyricsList.clear();
+    _lineKeys.clear();
+    _lineHeights.clear();
+    if (_audioManager.currentSong != null && _audioManager.currentSong!['lyrics'] != null) {
+      print('Lyrics từ database: ${_audioManager.currentSong!['lyrics']}');
+      try {
+        Map<String, String> lyrics = Map<String, String>.from(jsonDecode(_audioManager.currentSong!['lyrics']));
+        _lyricsList = lyrics.entries.toList();
+        // Sắp xếp theo thời gian
+        _lyricsList.sort((a, b) {
+          int timeA = _parseTimeToSeconds(a.key);
+          int timeB = _parseTimeToSeconds(b.key);
+          return timeA.compareTo(timeB);
+        });
+        // Tạo GlobalKey cho từng dòng
+        _lineKeys = List.generate(_lyricsList.length, (index) => GlobalKey());
+        _lineHeights = List.filled(_lyricsList.length, 0.0, growable: true);
+      } catch (e) {
+        print('Lỗi khi parse lyrics: $e');
+        _lyricsList.clear();
+        _lyricsList.add(MapEntry("0:00", "Không có lời bài hát"));
+        _lineKeys.clear();
+        _lineKeys.add(GlobalKey());
+        _lineHeights.clear();
+        _lineHeights.add(0.0);
+      }
+    } else {
+      print('Lyrics không tồn tại hoặc null');
+      _lyricsList.clear();
+      _lyricsList.add(MapEntry("0:00", "Không có lời bài hát"));
+      _lineKeys.clear();
+      _lineKeys.add(GlobalKey());
+      _lineHeights.clear();
+      _lineHeights.add(0.0);
+    }
+    setState(() {});
+  }
+
+  // Chuyển thời gian từ "mm:ss" thành giây
+  int _parseTimeToSeconds(String time) {
+    List<String> parts = time.split(':');
+    int minutes = int.parse(parts[0]);
+    int seconds = int.parse(parts[1]);
+    return minutes * 60 + seconds;
+  }
+
+  // Cập nhật chỉ số câu hát đang phát
+  void _updateCurrentLyricIndex() {
+    int currentSeconds = _currentTime.toInt();
+    int newIndex = -1;
+
+    for (int i = 0; i < _lyricsList.length; i++) {
+      int lyricTime = _parseTimeToSeconds(_lyricsList[i].key);
+      if (currentSeconds >= lyricTime) {
+        newIndex = i;
+      } else {
+        break;
+      }
+    }
+
+    if (newIndex != _currentLyricIndex) {
+      print('Cập nhật _currentLyricIndex: $newIndex'); // Thêm log để debug
+      setState(() {
+        _currentLyricIndex = newIndex;
+      });
+      if (_currentLyricIndex >= 0) {
+        _scrollToCurrentLyric();
+      }
+    }
+  }
+
+  // Cuộn đến câu hát đang phát và căn giữa
+  void _scrollToCurrentLyric() {
+    if (_scrollController.hasClients && _currentLyricIndex >= 0) {
+      // Kiểm tra xem chiều cao của dòng hiện tại đã được cập nhật chưa
+      if (_currentLyricIndex >= _lineHeights.length || _lineHeights[_currentLyricIndex] <= 0.0) {
+        // Nếu chưa cập nhật, đợi và thử lại sau
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _scrollToCurrentLyric();
+        });
+        return;
+      }
+
+      // Tính vị trí cuộn
+      double position = 0.0;
+      for (int i = 0; i < _currentLyricIndex; i++) {
+        position += _lineHeights[i] > 0.0 ? _lineHeights[i] : 50.0; // Giá trị mặc định nếu chưa đo được
+      }
+
+      // Lấy chiều cao khung nhìn của ListView
+      double viewportHeight = 200; // maxHeight của ConstrainedBox
+      double currentLineHeight = _lineHeights[_currentLyricIndex];
+
+      // Căn giữa câu hát trong khung nhìn
+      double adjustedPosition = position - (viewportHeight / 2) + (currentLineHeight / 2);
+
+      // Đảm bảo không cuộn âm hoặc vượt quá giới hạn
+      adjustedPosition = adjustedPosition.clamp(0.0, _scrollController.position.maxScrollExtent);
+
+      _scrollController.animateTo(
+        adjustedPosition,
+        duration: Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
 
   // Hàm chuyển đổi giây thành phút:giây (mm:ss)
   String _formatDuration(double seconds) {
@@ -17,9 +198,15 @@ class _SongDetailPageState extends State<SongDetailPage> {
   }
 
   @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color.fromRGBO(18, 18, 18, 1),
+      backgroundColor: Color.fromRGBO(18, 18, 18, 1), // Màu nền cố định
       appBar: AppBar(
         backgroundColor: Color.fromRGBO(18, 18, 18, 1),
         elevation: 0,
@@ -29,7 +216,7 @@ class _SongDetailPageState extends State<SongDetailPage> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          "Tuyển tập của HIEUTHUHAI",
+          _audioManager.currentSong?['title'] ?? 'NOLOVENOLIFE',
           style: TextStyle(color: Colors.white, fontSize: 15),
         ),
         actions: [
@@ -40,17 +227,16 @@ class _SongDetailPageState extends State<SongDetailPage> {
         ],
       ),
       body: SingleChildScrollView(
-        physics: BouncingScrollPhysics(), // Hiệu ứng cuộn mượt
+        physics: BouncingScrollPhysics(),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Padding(
-              padding: const EdgeInsets.only(
-                  left: 15, right: 15, top: 30, bottom: 30),
+              padding: const EdgeInsets.only(left: 15, right: 15, top: 30, bottom: 30),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: Image.asset(
-                  'assets/images/random.png',
+                  _audioManager.currentSong?['avatar'] ?? 'assets/images/random.png',
                   width: 418,
                   height: 418,
                   fit: BoxFit.cover,
@@ -66,29 +252,28 @@ class _SongDetailPageState extends State<SongDetailPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "NOLOVENOLIFE",
+                        _audioManager.currentSong?['title'] ?? 'NOLOVENOLIFE',
                         style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold),
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       Text(
-                        "HIEUTHUHAI",
+                        _audioManager.currentSong?['artist'] ?? 'HIEUTHUHAI',
                         style: TextStyle(color: Colors.white70, fontSize: 14),
                       ),
                     ],
                   ),
                   IconButton(
-                    icon: Icon(Icons.favorite_border,
-                        color: Colors.white, size: 28),
+                    icon: Icon(Icons.favorite_border, color: Colors.white, size: 28),
                     onPressed: () {},
                   ),
                 ],
               ),
             ),
             Padding(
-              padding: const EdgeInsets.only(
-                  left: 20, right: 20, top: 25, bottom: 8),
+              padding: const EdgeInsets.only(left: 20, right: 20, top: 25, bottom: 8),
               child: Column(
                 children: [
                   SliderTheme(
@@ -104,6 +289,7 @@ class _SongDetailPageState extends State<SongDetailPage> {
                       onChanged: (value) {
                         setState(() {
                           _currentTime = value;
+                          _audioManager.audioPlayer.seek(Duration(seconds: value.toInt()));
                         });
                       },
                       activeColor: Color.fromARGB(166, 222, 219, 219),
@@ -111,22 +297,23 @@ class _SongDetailPageState extends State<SongDetailPage> {
                     ),
                   ),
                   Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 0, vertical: 5),
+                    padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 5),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
                           _formatDuration(_currentTime),
                           style: TextStyle(
-                              color: Color.fromARGB(166, 222, 219, 219),
-                              fontSize: 14),
+                            color: Color.fromARGB(166, 222, 219, 219),
+                            fontSize: 14,
+                          ),
                         ),
                         Text(
                           _formatDuration(_totalDuration),
                           style: TextStyle(
-                              color: Color.fromARGB(166, 222, 219, 219),
-                              fontSize: 14),
+                            color: Color.fromARGB(166, 222, 219, 219),
+                            fontSize: 14,
+                          ),
                         ),
                       ],
                     ),
@@ -144,18 +331,33 @@ class _SongDetailPageState extends State<SongDetailPage> {
                     onPressed: () {},
                   ),
                   IconButton(
-                    icon: Icon(Icons.skip_previous,
-                        color: Colors.white, size: 45),
-                    onPressed: () {},
+                    icon: Icon(Icons.skip_previous, color: Colors.white, size: 45),
+                    onPressed: _audioManager.currentIndex > 0 ? _audioManager.skipPrevious : null,
                   ),
                   IconButton(
-                    icon: Icon(Icons.play_circle_fill,
-                        color: Colors.white, size: 80),
-                    onPressed: () {},
+                    icon: Icon(
+                      _audioManager.isCompleted
+                          ? Icons.replay
+                          : _audioManager.isPlaying
+                              ? Icons.pause_circle_filled
+                              : Icons.play_circle_fill,
+                      color: Colors.white,
+                      size: 80,
+                    ),
+                    onPressed: _audioManager.currentSong != null
+                        ? (_audioManager.isCompleted
+                            ? _audioManager.replaySong
+                            : _audioManager.togglePlayPause)
+                        : null,
                   ),
                   IconButton(
                     icon: Icon(Icons.skip_next, color: Colors.white, size: 45),
-                    onPressed: () {},
+                    onPressed: _audioManager.currentIndex <
+                            (_audioManager.currentSong != null
+                                ? _audioManager.currentIndex + 1
+                                : 0)
+                        ? _audioManager.skipNext
+                        : null,
                   ),
                   IconButton(
                     icon: Icon(Icons.timer, color: Colors.white, size: 25),
@@ -165,10 +367,11 @@ class _SongDetailPageState extends State<SongDetailPage> {
               ),
             ),
             Container(
-              margin: EdgeInsets.all(20),
+              margin: EdgeInsets.symmetric(horizontal: 15, vertical: 20), // Padding 15px với viền màn hình
+              width: MediaQuery.of(context).size.width - 30, // Chiều rộng cố định
               padding: EdgeInsets.all(15),
               decoration: BoxDecoration(
-                color: Colors.red,
+                color: _lyricBoxColor, // Màu hộp lyric động từ PaletteGenerator
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
@@ -177,7 +380,7 @@ class _SongDetailPageState extends State<SongDetailPage> {
                   Text(
                     "Bản xem trước lời bài hát",
                     style: TextStyle(
-                      color: Colors.white,
+                      color: _textColor,
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
@@ -185,129 +388,56 @@ class _SongDetailPageState extends State<SongDetailPage> {
                   SizedBox(height: 20),
                   ConstrainedBox(
                     constraints: BoxConstraints(
-                      maxHeight: 200,
+                      minHeight: 100, // Chiều cao tối thiểu
+                      maxHeight: 200, // Chiều cao tối đa
                     ),
-                    child: SingleChildScrollView(
-                      physics: BouncingScrollPhysics(), // Hiệu ứng cuộn mượt
-                      child: Text(
-                        "Mình hãy cứ sống thế đi\n"
-                        "Ta cứ mãi ước mơ\n"
-                        "Ta cứ luôn mong chờ\n"
-                        "Điều tuyệt vời nhé em\n"
-                        "Cầm tay nhau mãi bước đi\n"
-                        "Sẽ cứ thế mỉm cười\n"
-                        "Ta sẽ quên đi\n"
-                        "Bao nhiêu tình yêu tan vỡ\n"
-                        "Như là giấc mơ\n"
-                        "No love no life\n"
-                        "No love no life\n"
-                        "Anh chẳng còn muốn\n"
-                        "Quay về nơi ấy\n"
-                        "No love no life\n"
-                        "No love no life\n"
-                        "Sẽ mãi thuộc về nơi đây với em\n"
-                        "Em biết anh là một thằng rapper\n"
-                        "Rót mật vào tai bằng dây thanh\n"
-                        "Chỉ xuất hiện là họ đã say nhanh\n"
-                        "Mang tiếp trap và trăm cái red flag\n"
-                        "Là bởi vì luôn luôn\n"
-                        "Có phụ nữ vây quanh\n"
-                        "Có 1000 lý do để phải ghen\n"
-                        "Nhưng em không\n"
-                        "Em up hình biết chắc anh phải xem\n"
-                        "Và đặc biệt phải khen\n"
-                        "Sau mỗi lần xem xong\n"
-                        "Anh luôn muốn\n"
-                        "Cài cho em thêm cúc\n"
-                        "Khi có thằng con trai nào đi qua\n"
-                        "Vì em và anh luôn muốn\n"
-                        "Chuyện mình nghiêm túc\n"
-                        "Không phải just a game như fifa\n"
-                        "Em làm cho mọi bài nhạc chia tay\n"
-                        "Mà anh đã từng viết\n"
-                        "Nó trở nên vô nghĩa\n"
-                        "Hai bờ môi chạm nhau vào khuya nay\n"
-                        "Mình ăn cho thật bốc\n"
-                        "Nên chẳng cần tô nĩa\n"
-                        "Em luôn tự tin, thu hút\n"
-                        "Điểm số luôn nằm ở top đầu\n"
-                        "Lần đầu gặp thì anh đã nhìn thấu\n"
-                        "Và cũng chẳng cần giấu\n"
-                        "Là hai ta khớp màu\n"
-                        "Em vẫn hay còn giận anh\n"
-                        "Khi mà xem qua\n"
-                        "Về những gì mà anh nói ở trên camera\n"
-                        "Hứa với em anh có thể đảm bảo,\n"
-                        "Tất cả thứ có thể ghen đều trên camera\n"
-                        "Bên nhau ta còn\n"
-                        "Không một giây do dự nào\n"
-                        "Bởi vì là yeah girl\n"
-                        "Em vẫn luôn làm cho anh tự hào\n"
-                        "Anh ghét nhất mỗi lần đi phỏng vấn\n"
-                        "Họ lại hỏi câu hỏi đó mà xem\n"
-                        "Họ hỏi anh về hình mẫu lý tưởng\n"
-                        "Nhưng không thể trả lời đó là em\n"
-                        "Bởi vì em tinh tế và em thông minh\n"
-                        "Đặt niềm tin hết vào anh\n"
-                        "Khi anh không tin\n"
-                        "Tặng em cả rừng hoa thật là lung linh\n"
-                        "Là vì em với đẹp luôn là cặp song sinh\n"
-                        "Làm anh thốt lên là DAMN như là KDot\n"
-                        "Là lý do mà đàn ông ngoài kia hay khóc\n"
-                        "Là lý do anh không sợ fan nữ unfan\n"
-                        "Và phải là nói mình độc thân\n"
-                        "Như idol K-Pop and it pays off\n"
-                        "Và cuộc sống sự nổi tiếng\n"
-                        "Anh đã quen rồi\n"
-                        "Cũng không hay ra ngoài\n"
-                        "Nên là I don’t mind\n"
-                        "Em thì rất ghét là phải tránh\n"
-                        "Mấy nơi đông người\n"
-                        "Cố luôn phải che mặt dù ta không sai\n"
-                        "Anh biết là em vẫn hay hình dung\n"
-                        "Ngày đứng chung một khung hình\n"
-                        "Và ta công khai\n"
-                        "Vì mình luôn hiểu ý nhau\n"
-                        "Vì có chung chữ cái đầu\n"
-                        "Ngoài mình ra thì không ai\n"
-                        "Mình hãy cứ sống thế đi\n"
-                        "Ta cứ mãi ước mơ\n"
-                        "Ta cứ luôn mong chờ\n"
-                        "Điều tuyệt vời nhé em\n"
-                        "Cầm tay nhau mãi bước đi\n"
-                        "Sẽ cứ thế mỉm cười\n"
-                        "Ta sẽ quên đi\n"
-                        "Bao nhiêu tình yêu tan vỡ\n"
-                        "Như là giấc mơ\n"
-                        "No love no life\n"
-                        "No love no life\n"
-                        "Anh chẳng còn muốn\n"
-                        "Quay về nơi ấy\n"
-                        "No love no life\n"
-                        "No love no life\n"
-                        "Sẽ mãi thuộc về nơi đây với em\n"
-                        "No love no life\n"
-                        "No love no life\n"
-                        "Anh chẳng còn muốn\n"
-                        "Quay về nơi ấy\n"
-                        "No love no life\n"
-                        "No love no life\n"
-                        "Sẽ mãi thuộc về nơi đây với em\n",
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 21,
-                            fontWeight: FontWeight.bold),
-                      ),
+                    child: ListView.builder(
+                      controller: _scrollController,
+                      physics: BouncingScrollPhysics(),
+                      itemCount: _lyricsList.length,
+                      itemBuilder: (context, index) {
+                        // Đo chiều cao của dòng lyric
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          final RenderBox? renderBox =
+                              _lineKeys[index].currentContext?.findRenderObject() as RenderBox?;
+                          if (renderBox != null && _lineHeights[index] != renderBox.size.height) {
+                            setState(() {
+                              _lineHeights[index] = renderBox.size.height;
+                              // Gọi _scrollToCurrentLyric() ngay khi đo được chiều cao của dòng hiện tại
+                              if (_currentLyricIndex >= 0 && _lineHeights[_currentLyricIndex] > 0.0) {
+                                _scrollToCurrentLyric();
+                              }
+                            });
+                          }
+                        });
+
+                        return Container(
+                          key: _lineKeys[index],
+                          padding: const EdgeInsets.symmetric(vertical: 5),
+                          child: Text(
+                            _lyricsList[index].value,
+                            style: TextStyle(
+                              color: index == _currentLyricIndex
+                                  ? _textColor
+                                  : _textColor.withOpacity(0.5),
+                              fontSize: 21,
+                              fontWeight: index == _currentLyricIndex
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ],
               ),
             ),
             Container(
-              margin: EdgeInsets.all(20),
+              margin: EdgeInsets.symmetric(horizontal: 15, vertical: 20), // Padding 15px với viền màn hình
               padding: EdgeInsets.all(15),
               decoration: BoxDecoration(
-                color: Colors.grey[900],
+                color: Colors.grey[900], // Màu cố định cho hộp "Người tham gia thực hiện"
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
@@ -316,15 +446,17 @@ class _SongDetailPageState extends State<SongDetailPage> {
                   Text(
                     "Người tham gia thực hiện",
                     style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold),
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   SizedBox(height: 10),
-                  _buildContributor("HIEUTHUHAI", "Nghệ sĩ chính", true),
                   _buildContributor(
-                      "Trần Minh Hiếu", "Nhà soạn nhạc, Người viết lời", false),
-                  _buildContributor("Kewtiie", "Nhà sản xuất", false),
+                    _audioManager.currentSong?['artist'] ?? 'HIEUTHUHAI',
+                    "Nghệ sĩ chính",
+                    true,
+                  ),
                 ],
               ),
             ),
@@ -344,12 +476,21 @@ class _SongDetailPageState extends State<SongDetailPage> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(name,
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold)),
-              Text(role, style: TextStyle(color: Colors.white70, fontSize: 12)),
+              Text(
+                name,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                role,
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 12,
+                ),
+              ),
             ],
           ),
           if (isFollowing)
@@ -358,10 +499,13 @@ class _SongDetailPageState extends State<SongDetailPage> {
               style: OutlinedButton.styleFrom(
                 side: BorderSide(color: Colors.white),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20)),
+                  borderRadius: BorderRadius.circular(20),
+                ),
               ),
-              child:
-                  Text("Đang theo dõi", style: TextStyle(color: Colors.white)),
+              child: Text(
+                "Đang theo dõi",
+                style: TextStyle(color: Colors.white),
+              ),
             ),
         ],
       ),

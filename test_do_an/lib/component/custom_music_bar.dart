@@ -97,7 +97,8 @@ class _CustomMusicBarState extends State<CustomMusicBar> {
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         decoration: BoxDecoration(
-          color: _backgroundColor, // Sử dụng màu trích xuất từ ảnh bìa
+          color: _backgroundColor
+              .withOpacity(0.9), // Sử dụng màu trích xuất từ ảnh bìa
           borderRadius: BorderRadius.circular(10),
         ),
         child: Row(
@@ -134,7 +135,8 @@ class _CustomMusicBarState extends State<CustomMusicBar> {
                   Text(
                     _audioManager.currentSong?['artist'] ?? 'Đang tải...',
                     style: TextStyle(
-                      color: _textColor.withOpacity(0.7), // Màu chữ phụ
+                      color: _textColor, // Màu chữ phụ
+                      fontWeight: FontWeight.bold,
                       fontSize: 12,
                     ),
                   ),
