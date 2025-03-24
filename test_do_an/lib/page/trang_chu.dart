@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '/component/custom_music_bar.dart';
 import '/component/custom_drawer_nav.dart';
-import 'package:test_do_an/helper/user_session.dart'; // Import UserSession
-import 'dart:io'; // Import để dùng File
+import 'package:test_do_an/helper/user_session.dart';
+import 'dart:io';
 
 class TrangChu extends StatefulWidget {
   @override
@@ -14,34 +14,31 @@ class _TrangChuState extends State<TrangChu> {
 
   @override
   Widget build(BuildContext context) {
-    // Lấy thông tin từ UserSession
-    String userName = UserSession.currentUser?['name'] ??
-        'Người dùng'; // Tên mặc định nếu null
-    String? avatarPath = UserSession.currentUser?['avatar']; // Đường dẫn avatar
+    String userName = UserSession.currentUser?['name'] ?? 'Người dùng';
+    String? avatarPath = UserSession.currentUser?['avatar'];
 
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: Color.fromRGBO(18, 18, 18, 1),
       drawer: NavigationWidget(),
       appBar: AppBar(
-        backgroundColor: Color.fromRGBO(18, 18, 18, 1), // Màu nền AppBar
+        backgroundColor: Color.fromRGBO(18, 18, 18, 1),
         leading: GestureDetector(
           onTap: () {
             _scaffoldKey.currentState?.openDrawer();
           },
           child: Container(
-            margin: EdgeInsets.only(left: 15), // Đẩy ảnh sang phải 10px
+            margin: EdgeInsets.only(left: 15),
             child: CircleAvatar(
               radius: 25,
               backgroundImage: avatarPath != null && avatarPath.isNotEmpty
-                  ? FileImage(File(avatarPath)) // Avatar từ đường dẫn cục bộ
-                  : AssetImage('assets/images/avatar.png')
-                      as ImageProvider, // Avatar mặc định
+                  ? FileImage(File(avatarPath))
+                  : AssetImage('assets/images/avatar.png') as ImageProvider,
             ),
           ),
         ),
         title: Text(
-          'Xin chào, $userName!', // Hiển thị tên thật
+          'Xin chào, $userName!',
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
@@ -67,6 +64,43 @@ class _TrangChuState extends State<TrangChu> {
   }
 
   Widget _buildSection() {
+    // Danh sách 8 bài hát mẫu với tiêu đề và hình ảnh khác nhau
+    List<Map<String, String>> songs = [
+      {
+        'title': 'NOLOVENOLIFE',
+        'image': 'assets/song_avatars/NOLOVENOLIFE-HIEUTHUHAI.png'
+      },
+      {
+        'title': 'We dont talk any more',
+        'image': 'assets/song_avatars/We Dont Talk Anymore - Charlie Puth.png'
+      },
+      {
+        'title': 'APT',
+        'image': 'assets/song_avatars/APT - ROSÉ, Bruno Mars.png'
+      },
+      {
+        'title': 'Chúng ta của hiện tại',
+        'image': 'assets/song_avatars/Chúng ta của hiện tại - Sơn Tùng MTP.png'
+      },
+      {
+        'title': 'Chúng ta của tương lai',
+        'image': 'assets/song_avatars/Chúng ta của tương lai - Sơn Tùng MTP.png'
+      },
+      {
+        'title': 'Die With A Smile',
+        'image': 'assets/song_avatars/Die With A Smile - Brunor Mars.png'
+      },
+      {
+        'title': 'Hẹn gặp em dưới ánh trăng',
+        'image':
+            'assets/song_avatars/Hẹn gặp em dưới ánh trăng - HIEUTHUHAI.png'
+      },
+      {
+        'title': 'Ngủ một mình',
+        'image': 'assets/song_avatars/Ngủ một mình - HIEUTHUHAI.png'
+      },
+    ];
+
     return Padding(
       padding: const EdgeInsets.only(
         left: 15.0,
@@ -84,49 +118,90 @@ class _TrangChuState extends State<TrangChu> {
         ),
         shrinkWrap: true,
         physics: NeverScrollableScrollPhysics(),
-        itemCount: 8,
+        itemCount: songs.length, // 8 bài hát
         itemBuilder: (context, index) {
-          return _buildGridItem(
-              'Ai cũng phải bắt đầu từ đâu đó', 'assets/images/random.png');
+          return _buildGridItem(songs[index]['title']!, songs[index]['image']!);
         },
       ),
     );
   }
 
   Widget _build_3_album() {
-    List<Map<String, String>> artistAlbums = [
+    // Danh sách cho "Nghệ sĩ bạn thích"
+    List<Map<String, String>> favoriteArtists = [
       {
         'title': 'Tuyển tập của HIEUTHUHAI',
-        'imagePath': 'assets/images/random.png'
+        'imagePath': 'assets/album_avatars/HIEUTHUHAI - album - P2.png'
       },
       {
         'title': 'Tuyển tập của JungKook',
-        'imagePath': 'assets/images/random.png'
+        'imagePath': 'assets/album_avatars/Jungkook - album - P2.png'
       },
-      {'title': 'Tuyển tập của Obito', 'imagePath': 'assets/images/random.png'},
-      {'title': 'Tuyển tập của MCK', 'imagePath': 'assets/images/random.png'},
+      {
+        'title': 'Tuyển tập của Obito',
+        'imagePath': 'assets/album_avatars/Obito - album - P2.png'
+      },
+      {
+        'title': 'Tuyển tập của MCK',
+        'imagePath': 'assets/album_avatars/MCK - album - P2.png'
+      },
     ];
 
-    List<Map<String, String>> recentAlbums = List.from(artistAlbums);
-    List<Map<String, String>> popularAlbums = List.from(artistAlbums);
+    // Danh sách cho "Gần đây"
+    List<Map<String, String>> recentSongs = [
+      {
+        'title': 'Tuyển tập của MCK',
+        'imagePath': 'assets/album_avatars/MCK - album - P2.png'
+      },
+      {
+        'title': 'Tuyển tập của Obito',
+        'imagePath': 'assets/album_avatars/Obito - album - P2.png'
+      },
+      {
+        'title': 'Tuyển tập của JungKook',
+        'imagePath': 'assets/album_avatars/Jungkook - album - P2.png'
+      },
+      {
+        'title': 'Tuyển tập của HIEUTHUHAI',
+        'imagePath': 'assets/album_avatars/HIEUTHUHAI - album - P2.png'
+      },
+    ];
+
+    // Danh sách cho "Được đánh giá nhất"
+    List<Map<String, String>> topRated = [
+      {
+        'title': 'Top 1',
+        'imagePath': 'assets/album_avatars/Sơn Tùng MTP - album.png'
+      },
+      {
+        'title': 'Top 2',
+        'imagePath': 'assets/album_avatars/Charlie Puth - album.png'
+      },
+      {
+        'title': 'Top 3',
+        'imagePath': 'assets/album_avatars/Bruno Mars - album.png'
+      },
+      {
+        'title': 'Top 4',
+        'imagePath': 'assets/album_avatars/HIEUTHUHAI - album.png'
+      },
+    ];
 
     return Column(
       children: [
-        _buildSectionAlbums('Nghệ sĩ bạn thích', artistAlbums),
-        _buildSectionAlbums('Gần đây', recentAlbums),
-        _buildSectionAlbums('Được đánh giá nhất', popularAlbums),
+        _buildSectionAlbums('Nghệ sĩ bạn thích', favoriteArtists),
+        _buildSectionAlbums('Gần đây', recentSongs),
+        _buildSectionAlbums('Được đánh giá nhất', topRated),
       ],
     );
   }
 
-////////////////////////////////////////////////////////////////////////////////////
-
-//Item thẻ
+  //Item thẻ
   Widget _buildGridItem(String title, String imagePath) {
     return Container(
       decoration: BoxDecoration(
         color: Color(0xFF292929),
-        borderRadius: BorderRadius.circular(5),
+        borderRadius: BorderRadius.circular(10),
       ),
       padding: const EdgeInsets.only(
         left: 0,
@@ -137,6 +212,10 @@ class _TrangChuState extends State<TrangChu> {
       child: Row(
         children: <Widget>[
           ClipRRect(
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(10), // Bo tròn góc trái trên
+              bottomLeft: Radius.circular(10), // Bo tròn góc trái dưới
+            ),
             child: Image.asset(
               imagePath,
               width: 70,
@@ -162,7 +241,7 @@ class _TrangChuState extends State<TrangChu> {
     );
   }
 
-//Hàng Album
+  //Hàng Album
   Widget _buildSectionAlbums(String title, List<Map<String, String>> albums) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 15.0, horizontal: 15.0),
@@ -192,7 +271,7 @@ class _TrangChuState extends State<TrangChu> {
     );
   }
 
-//Item Album
+  //Item Album
   Widget _buildAlbumCard(String title, String imagePath) {
     return Padding(
       padding: const EdgeInsets.only(right: 10.0),
@@ -212,7 +291,7 @@ class _TrangChuState extends State<TrangChu> {
             gradient: LinearGradient(
               begin: Alignment.bottomCenter,
               end: Alignment.topCenter,
-              colors: [Colors.black.withOpacity(0.6), Colors.transparent],
+              colors: [Colors.black.withOpacity(0.4), Colors.transparent],
             ),
           ),
           child: Align(
