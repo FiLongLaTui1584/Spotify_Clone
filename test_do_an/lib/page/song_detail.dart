@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:test_do_an/helper/audio_player_manager.dart';
+import 'package:test_do_an/helper/database_helper.dart';
+import 'package:test_do_an/helper/user_session.dart';
+import 'package:test_do_an/page/artist_info.dart';
 import 'package:just_audio/just_audio.dart';
-import 'dart:convert'; // Để parse JSON lyrics
-import 'package:palette_generator/palette_generator.dart'; // Để trích xuất màu từ ảnh bìa
+import 'dart:convert';
+import 'package:palette_generator/palette_generator.dart';
 
 class SongDetailPage extends StatefulWidget {
   @override
@@ -11,15 +14,16 @@ class SongDetailPage extends StatefulWidget {
 
 class _SongDetailPageState extends State<SongDetailPage> {
   final AudioPlayerManager _audioManager = AudioPlayerManager();
-  double _currentTime = 0; // Thời gian hiện tại của bài hát
-  double _totalDuration = 0; // Tổng thời gian bài hát
-  Color _lyricBoxColor = Colors.red; // Màu mặc định cho hộp lyric
-  Color _textColor = Colors.white; // Màu chữ mặc định
-  List<MapEntry<String, String>> _lyricsList = []; // Danh sách lời bài hát với thời gian
-  int _currentLyricIndex = -1; // Chỉ số câu hát đang phát
-  final ScrollController _scrollController = ScrollController(); // Controller để cuộn lời bài hát
-  List<double> _lineHeights = []; // Lưu chiều cao của từng dòng lyric
-  List<GlobalKey> _lineKeys = []; // GlobalKey để đo chiều cao từng dòng
+  double _currentTime = 0;
+  double _totalDuration = 0;
+  Color _lyricBoxColor = Colors.red;
+  Color _textColor = Colors.white;
+  List<MapEntry<String, String>> _lyricsList = [];
+  int _currentLyricIndex = -1;
+  final ScrollController _scrollController = ScrollController();
+  List<double> _lineHeights = [];
+  List<GlobalKey> _lineKeys = [];
+  bool _isFavorite = false;
 
   @override
   void initState() {
@@ -27,6 +31,7 @@ class _SongDetailPageState extends State<SongDetailPage> {
     _setupAudioListeners();
     _updateLyricBoxColor();
     _parseLyricsToList();
+    _checkIfFavorite();
   }
 
   void _setupAudioListeners() {
@@ -46,8 +51,9 @@ class _SongDetailPageState extends State<SongDetailPage> {
       if (mounted) {
         setState(() {
           _totalDuration = _audioManager.audioPlayer.duration?.inSeconds.toDouble() ?? 196;
-          _updateLyricBoxColor(); // Cập nhật màu hộp lyric khi đổi bài
-          _parseLyricsToList(); // Cập nhật danh sách lời bài hát khi đổi bài
+          _updateLyricBoxColor();
+          _parseLyricsToList();
+          _checkIfFavorite();
         });
       }
     });
@@ -74,7 +80,7 @@ class _SongDetailPageState extends State<SongDetailPage> {
       } catch (e) {
         print('Lỗi khi trích xuất màu: $e');
         setState(() {
-          _lyricBoxColor = Colors.red; // Màu mặc định nếu lỗi
+          _lyricBoxColor = Colors.red;
           _textColor = Colors.white;
         });
       }
@@ -144,7 +150,7 @@ class _SongDetailPageState extends State<SongDetailPage> {
     }
 
     if (newIndex != _currentLyricIndex) {
-      print('Cập nhật _currentLyricIndex: $newIndex'); // Thêm log để debug
+      print('Cập nhật _currentLyricIndex: $newIndex');
       setState(() {
         _currentLyricIndex = newIndex;
       });
@@ -169,11 +175,10 @@ class _SongDetailPageState extends State<SongDetailPage> {
       // Tính vị trí cuộn
       double position = 0.0;
       for (int i = 0; i < _currentLyricIndex; i++) {
-        position += _lineHeights[i] > 0.0 ? _lineHeights[i] : 50.0; // Giá trị mặc định nếu chưa đo được
+        position += _lineHeights[i] > 0.0 ? _lineHeights[i] : 50.0;
       }
 
-      // Lấy chiều cao khung nhìn của ListView
-      double viewportHeight = 200; // maxHeight của ConstrainedBox
+      double viewportHeight = 200;
       double currentLineHeight = _lineHeights[_currentLyricIndex];
 
       // Căn giữa câu hát trong khung nhìn
@@ -197,6 +202,64 @@ class _SongDetailPageState extends State<SongDetailPage> {
     return '$minutes:${remainingSeconds.toString().padLeft(2, '0')}';
   }
 
+  void _rewind10Seconds() {
+    double newTime = (_currentTime - 10).clamp(0, _totalDuration);
+    _audioManager.audioPlayer.seek(Duration(seconds: newTime.toInt()));
+    setState(() {
+      _currentTime = newTime;
+    });
+  }
+
+  void _skip10Seconds() {
+    double newTime = (_currentTime + 10).clamp(0, _totalDuration);
+    _audioManager.audioPlayer.seek(Duration(seconds: newTime.toInt()));
+    setState(() {
+      _currentTime = newTime;
+    });
+  }
+
+  Future<void> _checkIfFavorite() async {
+    int? userId = UserSession.currentUser?['id'];
+    if (userId == null || _audioManager.currentSong == null) return;
+
+    bool isFavorite = await DatabaseHelper.instance.isSongInFavoriteAlbum(
+      userId,
+      _audioManager.currentSong!['id'],
+    );
+    setState(() {
+      _isFavorite = isFavorite;
+    });
+  }
+
+  Future<void> _toggleFavorite() async {
+    int? userId = UserSession.currentUser?['id'];
+    if (userId == null || _audioManager.currentSong == null) return;
+
+    if (_isFavorite) {
+      await DatabaseHelper.instance.removeSongFromFavoriteAlbum(
+        userId,
+        _audioManager.currentSong!['id'],
+      );
+      setState(() {
+        _isFavorite = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Đã xóa khỏi danh sách yêu thích')),
+      );
+    } else {
+      await DatabaseHelper.instance.addSongToFavoriteAlbum(
+        userId,
+        _audioManager.currentSong!['id'],
+      );
+      setState(() {
+        _isFavorite = true;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Đã thêm vào danh sách yêu thích')),
+      );
+    }
+  }
+
   @override
   void dispose() {
     _scrollController.dispose();
@@ -206,7 +269,7 @@ class _SongDetailPageState extends State<SongDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color.fromRGBO(18, 18, 18, 1), // Màu nền cố định
+      backgroundColor: Color.fromRGBO(18, 18, 18, 1),
       appBar: AppBar(
         backgroundColor: Color.fromRGBO(18, 18, 18, 1),
         elevation: 0,
@@ -266,8 +329,12 @@ class _SongDetailPageState extends State<SongDetailPage> {
                     ],
                   ),
                   IconButton(
-                    icon: Icon(Icons.favorite_border, color: Colors.white, size: 28),
-                    onPressed: () {},
+                    icon: Icon(
+                      _isFavorite ? Icons.favorite : Icons.favorite_border,
+                      color: _isFavorite ? Colors.red : Colors.white,
+                      size: 28,
+                    ),
+                    onPressed: _toggleFavorite,
                   ),
                 ],
               ),
@@ -327,11 +394,11 @@ class _SongDetailPageState extends State<SongDetailPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   IconButton(
-                    icon: Icon(Icons.shuffle, color: Colors.white, size: 25),
-                    onPressed: () {},
+                    icon: Icon(Icons.replay_10, color: Colors.white, size: 40),
+                    onPressed: _rewind10Seconds,
                   ),
                   IconButton(
-                    icon: Icon(Icons.skip_previous, color: Colors.white, size: 45),
+                    icon: Icon(Icons.skip_previous, color: Colors.white, size: 50),
                     onPressed: _audioManager.currentIndex > 0 ? _audioManager.skipPrevious : null,
                   ),
                   IconButton(
@@ -351,27 +418,25 @@ class _SongDetailPageState extends State<SongDetailPage> {
                         : null,
                   ),
                   IconButton(
-                    icon: Icon(Icons.skip_next, color: Colors.white, size: 45),
+                    icon: Icon(Icons.skip_next, color: Colors.white, size: 50),
                     onPressed: _audioManager.currentIndex <
-                            (_audioManager.currentSong != null
-                                ? _audioManager.currentIndex + 1
-                                : 0)
+                            (_audioManager.currentSong != null ? _audioManager.currentIndex + 1 : 0)
                         ? _audioManager.skipNext
                         : null,
                   ),
                   IconButton(
-                    icon: Icon(Icons.timer, color: Colors.white, size: 25),
-                    onPressed: () {},
+                    icon: Icon(Icons.forward_10, color: Colors.white, size: 40),
+                    onPressed: _skip10Seconds,
                   ),
                 ],
               ),
             ),
             Container(
-              margin: EdgeInsets.symmetric(horizontal: 15, vertical: 20), // Padding 15px với viền màn hình
-              width: MediaQuery.of(context).size.width - 30, // Chiều rộng cố định
+              margin: EdgeInsets.symmetric(horizontal: 15, vertical: 20),
+              width: MediaQuery.of(context).size.width - 30,
               padding: EdgeInsets.all(15),
               decoration: BoxDecoration(
-                color: _lyricBoxColor, // Màu hộp lyric động từ PaletteGenerator
+                color: _lyricBoxColor,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
@@ -388,8 +453,8 @@ class _SongDetailPageState extends State<SongDetailPage> {
                   SizedBox(height: 20),
                   ConstrainedBox(
                     constraints: BoxConstraints(
-                      minHeight: 100, // Chiều cao tối thiểu
-                      maxHeight: 200, // Chiều cao tối đa
+                      minHeight: 100,
+                      maxHeight: 200,
                     ),
                     child: ListView.builder(
                       controller: _scrollController,
@@ -421,9 +486,7 @@ class _SongDetailPageState extends State<SongDetailPage> {
                                   ? _textColor
                                   : _textColor.withOpacity(0.5),
                               fontSize: 21,
-                              fontWeight: index == _currentLyricIndex
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
+                              fontWeight: index == _currentLyricIndex ? FontWeight.bold : FontWeight.normal,
                             ),
                           ),
                         );
@@ -434,10 +497,10 @@ class _SongDetailPageState extends State<SongDetailPage> {
               ),
             ),
             Container(
-              margin: EdgeInsets.symmetric(horizontal: 15, vertical: 20), // Padding 15px với viền màn hình
+              margin: EdgeInsets.symmetric(horizontal: 15, vertical: 20),
               padding: EdgeInsets.all(15),
               decoration: BoxDecoration(
-                color: Colors.grey[900], // Màu cố định cho hộp "Người tham gia thực hiện"
+                color: Colors.grey[900],
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
@@ -473,25 +536,46 @@ class _SongDetailPageState extends State<SongDetailPage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                name,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
+          GestureDetector(
+            onTap: () async {
+              Map<String, dynamic>? artist = await DatabaseHelper.instance.getArtistByName(name);
+              if (artist != null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ArtistInfoPage(
+                      artistId: artist['id'],
+                      artistName: artist['name'],
+                      artistAvatar: artist['avatar'] ?? 'assets/images/random.png',
+                    ),
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Không tìm thấy thông tin nghệ sĩ')),
+                );
+              }
+            },
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-              Text(
-                role,
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 12,
+                Text(
+                  role,
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 12,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           if (isFollowing)
             OutlinedButton(

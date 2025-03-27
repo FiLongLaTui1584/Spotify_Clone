@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:test_do_an/helper/audio_player_manager.dart'; // Import AudioPlayerManager
 import 'page/thu_vien.dart';
 import 'page/trang_chu.dart';
 import 'page/tim_kiem.dart';
@@ -13,6 +14,13 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
   final PageController _pageController = PageController();
+  final AudioPlayerManager _audioManager = AudioPlayerManager(); // Khởi tạo AudioPlayerManager
+
+  @override
+  void initState() {
+    super.initState();
+    _audioManager.init(); // Khởi tạo AudioPlayerManager một lần duy nhất
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -34,5 +42,12 @@ class _MainScreenState extends State<MainScreen> {
         onItemTapped: _onItemTapped,
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    _audioManager.dispose(); // Giải phóng AudioPlayerManager khi MainScreen bị hủy
+    super.dispose();
   }
 }

@@ -3,6 +3,8 @@ import '../component/tim_kiem_gan_day.dart';
 import '/component/custom_music_bar.dart';
 import '/component/custom_drawer_nav.dart';
 import 'package:test_do_an/helper/user_session.dart'; // Import UserSession
+import 'package:test_do_an/helper/database_helper.dart'; // Import DatabaseHelper
+import 'package:test_do_an/helper/audio_player_manager.dart'; // Import AudioPlayerManager
 import 'dart:io'; // Import để dùng File
 
 class TimKiem extends StatefulWidget {
@@ -10,11 +12,18 @@ class TimKiem extends StatefulWidget {
   _TimKiemState createState() => _TimKiemState();
 }
 
-class _TimKiemState extends State<TimKiem> {
+class _TimKiemState extends State<TimKiem> with AutomaticKeepAliveClientMixin {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  // Sử dụng instance Singleton của AudioPlayerManager
+  final AudioPlayerManager _audioManager = AudioPlayerManager();
+
+  @override
+  bool get wantKeepAlive => true; // Giữ trạng thái của widget
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // Gọi super.build để AutomaticKeepAliveClientMixin hoạt động
+
     // Lấy thông tin từ UserSession
     String userName = UserSession.currentUser?['name'] ??
         'Người dùng'; // Tên mặc định nếu null
@@ -60,8 +69,6 @@ class _TimKiemState extends State<TimKiem> {
             const SizedBox(height: 20),
             _buildTrendingSongs(),
             const SizedBox(height: 20),
-            _buildSeeAllButton(),
-            const SizedBox(height: 20),
             _buildSongCategories(),
           ],
         ),
@@ -102,7 +109,7 @@ class _TimKiemState extends State<TimKiem> {
     );
   }
 
-// Hiệu ứng chuyển fade in
+  // Hiệu ứng chuyển fade in
   Route _createFadeRoute() {
     return PageRouteBuilder(
       pageBuilder: (context, animation, secondaryAnimation) => TimKiemGanDay(),
@@ -116,25 +123,13 @@ class _TimKiemState extends State<TimKiem> {
   }
 
   Widget _buildTrendingSongs() {
-    final List<Map<String, String>> songs = [
-      {
-        'rank': '1',
-        'image': 'assets/images/random.png',
-        'title': 'Die With A Smile - Lady Gaga, Bruno Mars',
-        'plays': '1.947.313.698'
-      },
-      {
-        'rank': '2',
-        'image': 'assets/images/random.png',
-        'title': 'APT. - ROSÉ, Bruno Mars',
-        'plays': '1.229.115.451'
-      },
-      {
-        'rank': '3',
-        'image': 'assets/images/random.png',
-        'title': 'CHĂM HOA - MONO',
-        'plays': '24.533.269'
-      },
+    // Danh sách lượt nghe giả giảm dần (cập nhật cho 5 bài hát)
+    final List<String> fakePlays = [
+      '1,947,313,698', // Lớn nhất
+      '1,229,115,451',
+      '524,533,269',
+      '324,123,456',
+      '124,987,654',   // Nhỏ nhất
     ];
 
     return Padding(
@@ -148,54 +143,86 @@ class _TimKiemState extends State<TimKiem> {
           const Text(
             'Những bài hát xu hướng',
             style: TextStyle(
-                color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 10),
-          Column(
-            children: songs.map((song) => _buildSongItem(song)).toList(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSongItem(Map<String, String> song) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        children: [
-          Text(song['rank']!,
-              style: const TextStyle(color: Colors.white, fontSize: 18)),
-          const SizedBox(width: 10),
-          Image.asset(song['image']!, width: 50, height: 50),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(song['title']!,
-                    style: const TextStyle(color: Colors.white, fontSize: 16)),
-                Text(song['plays']!,
-                    style: const TextStyle(color: Colors.grey, fontSize: 14)),
-              ],
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
             ),
           ),
-          Icon(Icons.more_vert, color: Colors.white),
+          const SizedBox(height: 10),
+          FutureBuilder<List<Map<String, dynamic>>>(
+            future: DatabaseHelper.instance.getRandomSongs(), // Sử dụng getRandomSongs để lấy 5 bài ngẫu nhiên
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(child: CircularProgressIndicator());
+              } else if (snapshot.hasError) {
+                return Center(
+                  child: Text(
+                    'Lỗi khi tải bài hát: ${snapshot.error}',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                );
+              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return Center(
+                  child: Text(
+                    'Không có bài hát nào',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                );
+              }
+
+              final songs = snapshot.data!;
+              return Column(
+                children: songs.asMap().entries.map((entry) {
+                  int index = entry.key;
+                  Map<String, dynamic> song = entry.value;
+                  return _buildSongItem(
+                    {
+                      'rank': '${index + 1}',
+                      'image': song['avatar'] ?? 'assets/images/random.png',
+                      'title': song['title'],
+                      'plays': fakePlays[index], // Gán lượt nghe giả theo thứ tự giảm dần
+                    },
+                    song['id'], // Truyền id của bài hát
+                  );
+                }).toList(),
+              );
+            },
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildSeeAllButton() {
-    return Center(
-      child: OutlinedButton(
-        style: OutlinedButton.styleFrom(
-          side: const BorderSide(color: Colors.white),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+  Widget _buildSongItem(Map<String, String> song, int songId) {
+    return GestureDetector(
+      onTap: () async {
+        // Phát bài hát khi nhấn, truyền id của bài hát
+        await _audioManager.playSongById(songId);
+        setState(() {}); // Cập nhật UI nếu cần
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: Row(
+          children: [
+            Text(song['rank']!,
+                style: const TextStyle(color: Colors.white, fontSize: 18)),
+            const SizedBox(width: 10),
+            Image.asset(song['image']!, width: 50, height: 50),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(song['title']!,
+                      style: const TextStyle(color: Colors.white, fontSize: 16)),
+                  Text(song['plays']!,
+                      style: const TextStyle(color: Colors.grey, fontSize: 14)),
+                ],
+              ),
+            ),
+            Icon(Icons.more_vert, color: Colors.white),
+          ],
         ),
-        onPressed: () {},
-        child: const Text('Xem tất cả', style: TextStyle(color: Colors.white)),
       ),
     );
   }

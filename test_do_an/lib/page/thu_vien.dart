@@ -6,6 +6,7 @@ import '/component/custom_music_bar.dart';
 import '/component/custom_drawer_nav.dart';
 import 'package:test_do_an/helper/user_session.dart'; // Import UserSession
 import 'dart:io'; // Import để dùng File
+import 'package:test_do_an/helper/database_helper.dart'; // Import DatabaseHelper
 
 class ThuVien extends StatefulWidget {
   @override
@@ -20,9 +21,21 @@ class _ThuVienState extends State<ThuVien> {
   @override
   Widget build(BuildContext context) {
     // Lấy thông tin từ UserSession
-    String userName = UserSession.currentUser?['name'] ??
-        'Người dùng'; // Tên mặc định nếu null
-    String? avatarPath = UserSession.currentUser?['avatar']; // Đường dẫn avatar
+    String userName = UserSession.currentUser?['name'] ?? 'Người dùng';
+    String? avatarPath = UserSession.currentUser?['avatar'];
+    int? userId = UserSession.currentUser?['id'];
+
+    if (userId == null) {
+      return Scaffold(
+        backgroundColor: Color.fromRGBO(18, 18, 18, 1),
+        body: Center(
+          child: Text(
+            'Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.',
+            style: TextStyle(color: Colors.white, fontSize: 16),
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       key: _scaffoldKey,
@@ -31,12 +44,12 @@ class _ThuVienState extends State<ThuVien> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildHeader(
-              userName, avatarPath), // Truyền thông tin vào _buildHeader
+          _buildHeader(userName, avatarPath),
           _buildCategoryButtons(),
-          SizedBox(height: 10),
-          _buildSortBar(),
-          isPlaylistSelected ? _buildAlbumList() : _buildArtistList(),
+          SizedBox(height: 20),
+          isPlaylistSelected
+              ? _buildAlbumList(userId)
+              : _buildArtistList(userId),
         ],
       ),
       bottomNavigationBar: Padding(
@@ -56,9 +69,8 @@ class _ThuVienState extends State<ThuVien> {
             child: CircleAvatar(
               radius: 20,
               backgroundImage: avatarPath != null && avatarPath.isNotEmpty
-                  ? FileImage(File(avatarPath)) // Avatar từ đường dẫn cục bộ
-                  : AssetImage('assets/images/avatar.png')
-                      as ImageProvider, // Avatar mặc định
+                  ? FileImage(File(avatarPath))
+                  : AssetImage('assets/images/avatar.png') as ImageProvider,
             ),
           ),
           const SizedBox(width: 15),
@@ -71,18 +83,17 @@ class _ThuVienState extends State<ThuVien> {
             ),
           ),
           Spacer(),
-          Icon(Icons.search, color: Colors.white),
-          const SizedBox(width: 15),
           IconButton(
             icon: Icon(Icons.add, color: Colors.white),
             onPressed: () {
               showModalBottomSheet(
                 context: context,
-                isScrollControlled: false, // Mở rộng full màn hình nếu cần
-                backgroundColor: Colors.transparent, // Làm trong suốt nền
-                builder: (context) =>
-                    CreatePlaylistSheet(), // Gọi file Bottom Sheet
-              );
+                isScrollControlled: false,
+                backgroundColor: Colors.transparent,
+                builder: (context) => CreatePlaylistSheet(),
+              ).then((_) {
+                setState(() {}); // Làm mới danh sách album
+              });
             },
           ),
         ],
@@ -112,6 +123,18 @@ class _ThuVienState extends State<ThuVien> {
             },
             child: _buildCategoryButton('Danh sách phát', isPlaylistSelected),
           ),
+          Spacer(),
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                isGridView = !isGridView;
+              });
+            },
+            child: Icon(
+              isGridView ? Icons.list : Icons.grid_view,
+              color: Colors.white,
+            ),
+          ),
         ],
       ),
     );
@@ -134,81 +157,113 @@ class _ThuVienState extends State<ThuVien> {
     );
   }
 
-  Widget _buildSortBar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-      child: Row(
-        children: [
-          Icon(Icons.sort, color: Colors.white),
-          SizedBox(width: 10),
-          Text(
-            'Thứ tự chữ cái',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-            ),
-          ),
-          Spacer(),
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                isGridView = !isGridView;
-              });
-            },
-            child: Icon(
-              isGridView ? Icons.list : Icons.grid_view,
-              color: Colors.white,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-//Danh sách album bài hát
-  Widget _buildAlbumList() {
-    final List<Map<String, String>> songs = [
-      {'name': 'Danh sách phát #1', 'image': 'assets/images/song_icon.png'},
-      {'name': 'Danh sách phát #2', 'image': 'assets/images/song_icon.png'},
-      {'name': 'Danh sách phát #3', 'image': 'assets/images/song_icon.png'},
-      {'name': 'Danh sách phát #4', 'image': 'assets/images/song_icon.png'},
-      {'name': 'Danh sách phát #5', 'image': 'assets/images/song_icon.png'},
-      {'name': 'Danh sách phát #6', 'image': 'assets/images/song_icon.png'},
-      {'name': 'Danh sách phát #7', 'image': 'assets/images/song_icon.png'},
-      {'name': 'Danh sách phát #8', 'image': 'assets/images/song_icon.png'},
-    ];
-
-    return Expanded(
-      child: isGridView
-          ? GridView.builder(
-              padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
+  // Danh sách album bài hát
+  Widget _buildAlbumList(int userId) {
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: DatabaseHelper.instance.getUserAlbums(userId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Expanded(
+            child: Center(child: CircularProgressIndicator()),
+          );
+        } else if (snapshot.hasError) {
+          print('Lỗi trong FutureBuilder: ${snapshot.error}');
+          return Expanded(
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Lỗi khi tải danh sách album: ${snapshot.error}',
+                    style: TextStyle(color: Colors.white, fontSize: 16),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 10),
+                  ElevatedButton(
+                    onPressed: () {
+                      setState(() {}); // Làm mới FutureBuilder
+                    },
+                    child: Text('Thử lại'),
+                  ),
+                ],
               ),
-              itemCount: songs.length,
-              itemBuilder: (context, index) {
-                return _buildGridAlbumItem(songs[index], context);
-              },
-            )
-          : ListView.builder(
-              padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-              itemCount: songs.length,
-              itemBuilder: (context, index) {
-                return _buildListAlbumItem(songs[index], context);
-              },
             ),
+          );
+        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return Expanded(
+            child: Center(
+              child: Text(
+                'Bạn chưa có album nào',
+                style: TextStyle(color: Colors.white, fontSize: 16),
+              ),
+            ),
+          );
+        }
+
+        final albums = snapshot.data!;
+        print('Danh sách album hiển thị: $albums');
+
+        return Expanded(
+          child: isGridView
+              ? GridView.builder(
+                  padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                  ),
+                  itemCount: albums.length,
+                  itemBuilder: (context, index) {
+                    return _buildGridAlbumItem(albums[index], context);
+                  },
+                )
+              : ListView.builder(
+                  padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+                  itemCount: albums.length,
+                  itemBuilder: (context, index) {
+                    return _buildListAlbumItem(albums[index], context);
+                  },
+                ),
+        );
+      },
     );
   }
 
-  Widget _buildListAlbumItem(Map<String, String> album, BuildContext context) {
+  Future<List<Map<String, dynamic>>> _getUserAlbums(int userId) async {
+    final db = await DatabaseHelper.instance.database;
+    List<Map<String, dynamic>> albums = await db.query(
+      'albums',
+      where: 'userId = ?',
+      whereArgs: [userId],
+    );
+
+    // Sắp xếp để album "Yêu thích" (isDefault = 1) lên đầu
+    albums.sort((a, b) {
+      if (a['isDefault'] == 1) return -1;
+      if (b['isDefault'] == 1) return 1;
+      return a['name'].compareTo(b['name']);
+    });
+
+    return albums.map((album) {
+      return {
+        'id': album['id'],
+        'name': album['name'],
+        'image': 'assets/images/song_icon.png', // Hình ảnh mặc định
+        'isDefault': album['isDefault'],
+      };
+    }).toList();
+  }
+
+  Widget _buildListAlbumItem(Map<String, dynamic> album, BuildContext context) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => PlaylistDetailPage(),
+            builder: (context) => PlaylistDetailPage(
+              albumId: album['id'],
+              albumName: album['name'],
+            ),
           ),
         );
       },
@@ -218,7 +273,7 @@ class _ThuVienState extends State<ThuVien> {
           children: [
             ClipRRect(
               child: Image.asset(
-                album['image']!, // Sử dụng ảnh từ dữ liệu
+                album['image'],
                 width: 70,
                 height: 70,
                 fit: BoxFit.cover,
@@ -226,7 +281,7 @@ class _ThuVienState extends State<ThuVien> {
             ),
             const SizedBox(width: 15),
             Text(
-              album['name']!, // Hiển thị tên album từ dữ liệu
+              album['name'],
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 16,
@@ -246,13 +301,16 @@ class _ThuVienState extends State<ThuVien> {
     );
   }
 
-  Widget _buildGridAlbumItem(Map<String, String> album, BuildContext context) {
+  Widget _buildGridAlbumItem(Map<String, dynamic> album, BuildContext context) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => PlaylistDetailPage(),
+            builder: (context) => PlaylistDetailPage(
+              albumId: album['id'],
+              albumName: album['name'],
+            ),
           ),
         );
       },
@@ -260,7 +318,7 @@ class _ThuVienState extends State<ThuVien> {
         children: [
           ClipRRect(
             child: Image.asset(
-              album['image']!, // Sử dụng ảnh từ dữ liệu
+              album['image'],
               width: 90,
               height: 90,
               fit: BoxFit.cover,
@@ -268,7 +326,7 @@ class _ThuVienState extends State<ThuVien> {
           ),
           const SizedBox(height: 8),
           Text(
-            album['name']!, // Hiển thị tên album từ dữ liệu
+            album['name'],
             style: TextStyle(
               color: Colors.white,
               fontSize: 14,
@@ -288,50 +346,72 @@ class _ThuVienState extends State<ThuVien> {
     );
   }
 
-//Danh sách nghệ sĩ
-  Widget _buildArtistList() {
-    final List<Map<String, String>> artists = [
-      {'name': 'Alan Walker', 'image': 'assets/images/random.png'},
-      {'name': 'AMEE', 'image': 'assets/images/random.png'},
-      {'name': 'ANH TRAI "SAY HI"', 'image': 'assets/images/random.png'},
-      {'name': 'Bích Phương', 'image': 'assets/images/random.png'},
-      {'name': 'BIGBANG', 'image': 'assets/images/random.png'},
-      {'name': 'Bruno Mars', 'image': 'assets/images/random.png'},
-      {'name': 'Changg', 'image': 'assets/images/random.png'},
-      {'name': 'Joji', 'image': 'assets/images/random.png'},
-      {'name': 'JVKE', 'image': 'assets/images/random.png'},
-      {'name': 'Alan Walker', 'image': 'assets/images/random.png'},
-      {'name': 'AMEE', 'image': 'assets/images/random.png'},
-      {'name': 'ANH TRAI "SAY HI"', 'image': 'assets/images/random.png'},
-      {'name': 'Bích Phương', 'image': 'assets/images/random.png'},
-      {'name': 'BIGBANG', 'image': 'assets/images/random.png'},
-      {'name': 'Bruno Mars', 'image': 'assets/images/random.png'},
-      {'name': 'Changg', 'image': 'assets/images/random.png'},
-      {'name': 'Joji', 'image': 'assets/images/random.png'},
-      {'name': 'JVKE', 'image': 'assets/images/random.png'}
-    ];
-
-    return Expanded(
-      child: isGridView
-          ? GridView.builder(
-              padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                crossAxisSpacing: 15,
-                mainAxisSpacing: 15,
-              ),
-              itemCount: artists.length,
-              itemBuilder: (context, index) {
-                return _buildArtistGridItem(artists[index]);
-              },
-            )
-          : ListView.builder(
-              padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-              itemCount: artists.length,
-              itemBuilder: (context, index) {
-                return _buildArtistItem(artists[index]);
-              },
+  // Danh sách nghệ sĩ
+  Widget _buildArtistList(int userId) {
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: DatabaseHelper.instance.getFollowedArtists(userId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Expanded(
+            child: Center(
+              child: CircularProgressIndicator(),
             ),
+          );
+        } else if (snapshot.hasError) {
+          return Expanded(
+            child: Center(
+              child: Text(
+                'Lỗi khi tải danh sách nghệ sĩ: ${snapshot.error}',
+                style: TextStyle(color: Colors.white, fontSize: 16),
+              ),
+            ),
+          );
+        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return Expanded(
+            child: Center(
+              child: Text(
+                'Bạn chưa follow nghệ sĩ nào',
+                style: TextStyle(color: Colors.white, fontSize: 16),
+              ),
+            ),
+          );
+        }
+
+        final artists = snapshot.data!;
+
+        return Expanded(
+          child: isGridView
+              ? GridView.builder(
+                  padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    crossAxisSpacing: 15,
+                    mainAxisSpacing: 15,
+                  ),
+                  itemCount: artists.length,
+                  itemBuilder: (context, index) {
+                    return _buildArtistGridItem({
+                      'id': artists[index]['id'].toString(),
+                      'name': artists[index]['name'],
+                      'image': artists[index]['avatar'] ??
+                          'assets/images/random.png',
+                    });
+                  },
+                )
+              : ListView.builder(
+                  padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+                  itemCount: artists.length,
+                  itemBuilder: (context, index) {
+                    return _buildArtistItem({
+                      'id': artists[index]['id'].toString(),
+                      'name': artists[index]['name'],
+                      'image': artists[index]['avatar'] ??
+                          'assets/images/random.png',
+                    });
+                  },
+                ),
+        );
+      },
     );
   }
 
@@ -341,7 +421,11 @@ class _ThuVienState extends State<ThuVien> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ArtistInfoPage(),
+            builder: (context) => ArtistInfoPage(
+              artistId: int.parse(artist['id']!),
+              artistName: artist['name']!,
+              artistAvatar: artist['image']!,
+            ),
           ),
         );
       },
@@ -381,7 +465,11 @@ class _ThuVienState extends State<ThuVien> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ArtistInfoPage(),
+            builder: (context) => ArtistInfoPage(
+              artistId: int.parse(artist['id']!),
+              artistName: artist['name']!,
+              artistAvatar: artist['image']!,
+            ),
           ),
         );
       },

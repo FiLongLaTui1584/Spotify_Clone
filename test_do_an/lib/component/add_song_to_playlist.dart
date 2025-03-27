@@ -1,98 +1,72 @@
 import 'package:flutter/material.dart';
+import 'package:test_do_an/helper/database_helper.dart';
 
-class AddSongToPlaylistBottomSheet extends StatelessWidget {
-  final List<Map<String, String>> suggestedSongs = [
-    {
-      'title': 'Dù Cho Mai Về Sau',
-      'artist': 'buituonglinh',
-      'image': 'assets/images/random.png'
-    },
-    {
-      'title': 'Slow Dancing In The Dark',
-      'artist': 'Joji',
-      'image': 'assets/images/random.png'
-    },
-    {
-      'title': 'Glimpse Of Us',
-      'artist': 'Joji',
-      'image': 'assets/images/random.png'
-    },
-    {
-      'title': 'Lover is a day',
-      'artist': 'Cuco',
-      'image': 'assets/images/random.png'
-    },
-    {
-      'title': 'My Time',
-      'artist': 'bo en',
-      'image': 'assets/images/random.png'
-    },
-    {
-      'title': 'I’d Rather Pretend',
-      'artist': 'Bryant Barnes',
-      'image': 'assets/images/random.png'
-    },
-    {
-      'title': 'No Surprise',
-      'artist': 'Radiohead',
-      'image': 'assets/images/random.png'
-    },
-    {
-      'title': 'Chezile',
-      'artist': 'Beanie',
-      'image': 'assets/images/random.png'
-    },
-    {
-      'title': 'demons',
-      'artist': 'Beanie',
-      'image': 'assets/images/random.png'
-    },
-    {
-      'title': 'Dù Cho Mai Về Sau',
-      'artist': 'buituonglinh',
-      'image': 'assets/images/random.png'
-    },
-    {
-      'title': 'Slow Dancing In The Dark',
-      'artist': 'Joji',
-      'image': 'assets/images/random.png'
-    },
-    {
-      'title': 'Glimpse Of Us',
-      'artist': 'Joji',
-      'image': 'assets/images/random.png'
-    },
-    {
-      'title': 'Lover is a day',
-      'artist': 'Cuco',
-      'image': 'assets/images/random.png'
-    },
-    {
-      'title': 'My Time',
-      'artist': 'bo en',
-      'image': 'assets/images/random.png'
-    },
-    {
-      'title': 'I’d Rather Pretend',
-      'artist': 'Bryant Barnes',
-      'image': 'assets/images/random.png'
-    },
-    {
-      'title': 'No Surprise',
-      'artist': 'Radiohead',
-      'image': 'assets/images/random.png'
-    },
-    {
-      'title': 'Chezile',
-      'artist': 'Beanie',
-      'image': 'assets/images/random.png'
-    },
-    {
-      'title': 'demons',
-      'artist': 'Beanie',
-      'image': 'assets/images/random.png'
-    },
-  ];
+class AddSongToPlaylistBottomSheet extends StatefulWidget {
+  final int albumId;
+
+  const AddSongToPlaylistBottomSheet({required this.albumId});
+
+  @override
+  _AddSongToPlaylistBottomSheetState createState() =>
+      _AddSongToPlaylistBottomSheetState();
+}
+
+class _AddSongToPlaylistBottomSheetState
+    extends State<AddSongToPlaylistBottomSheet> {
+  List<Map<String, dynamic>> allSongs = [];
+  List<Map<String, dynamic>> filteredSongs = [];
+  List<int> songsInAlbum = [];
+  TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSongs();
+    _searchController.addListener(_filterSongs);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadSongs() async {
+    songsInAlbum =
+        (await DatabaseHelper.instance.getSongsInAlbum(widget.albumId))
+            .map((song) => song['id'] as int)
+            .toList();
+
+    List<Map<String, dynamic>> songs =
+        await DatabaseHelper.instance.getAllSongs();
+
+    allSongs =
+        songs.where((song) => !songsInAlbum.contains(song['id'])).toList();
+    filteredSongs = List.from(allSongs);
+
+    setState(() {});
+  }
+
+  void _filterSongs() {
+    String query = _searchController.text.toLowerCase();
+    setState(() {
+      filteredSongs = allSongs.where((song) {
+        return song['title'].toLowerCase().contains(query);
+      }).toList();
+    });
+  }
+
+  Future<void> _addSongToAlbum(int songId) async {
+    await DatabaseHelper.instance.addSongToAlbum(widget.albumId, songId);
+    setState(() {
+      songsInAlbum.add(songId);
+      filteredSongs.removeWhere((song) => song['id'] == songId);
+      allSongs.removeWhere((song) => song['id'] == songId);
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Đã thêm bài hát vào playlist')),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -101,7 +75,6 @@ class AddSongToPlaylistBottomSheet extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Thanh tiêu đề
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -112,15 +85,15 @@ class AddSongToPlaylistBottomSheet extends StatelessWidget {
               Text(
                 "Thêm vào danh sách phát này",
                 style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold),
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-              SizedBox(width: 40), // Giữ khoảng cách cân bằng
+              SizedBox(width: 40),
             ],
           ),
           SizedBox(height: 10),
-          // Ô tìm kiếm
           Container(
             padding: EdgeInsets.symmetric(horizontal: 10),
             decoration: BoxDecoration(
@@ -128,28 +101,24 @@ class AddSongToPlaylistBottomSheet extends StatelessWidget {
               borderRadius: BorderRadius.circular(10),
             ),
             child: TextField(
+              controller: _searchController,
               style: TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 prefixIcon: Padding(
-                  padding: EdgeInsets.symmetric(
-                      vertical: 12), // Căn giữa icon theo chiều dọc
+                  padding: EdgeInsets.symmetric(vertical: 12),
                   child: Icon(Icons.search, color: Colors.white),
                 ),
                 hintText: "Tìm kiếm",
                 hintStyle: TextStyle(color: Colors.white70),
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(
-                    vertical: 12), // Căn giữa nội dung văn bản
+                contentPadding: EdgeInsets.symmetric(vertical: 12),
               ),
             ),
           ),
-
           SizedBox(height: 20),
-          // Danh sách bài hát đề xuất
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 0), // Thêm padding cho cả ListView
+              padding: const EdgeInsets.symmetric(horizontal: 0),
               child: ListView(
                 children: [
                   Padding(
@@ -163,32 +132,40 @@ class AddSongToPlaylistBottomSheet extends StatelessWidget {
                       ),
                     ),
                   ),
-                  ...suggestedSongs.map((song) {
+                  if (filteredSongs.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                      child: Text(
+                        "Không tìm thấy bài hát",
+                        style: TextStyle(color: Colors.grey, fontSize: 16),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ...filteredSongs.map((song) {
                     return ListTile(
-                      contentPadding: EdgeInsets
-                          .zero, // Loại bỏ padding mặc định của ListTile
+                      contentPadding: EdgeInsets.zero,
                       leading: ClipRRect(
                         borderRadius: BorderRadius.circular(8),
                         child: Image.asset(
-                          song['image']!,
+                          song['avatar'] ?? 'assets/images/random.png',
                           width: 50,
                           height: 50,
                           fit: BoxFit.cover,
                         ),
                       ),
                       title: Text(
-                        song['title']!,
+                        song['title'],
                         style: TextStyle(color: Colors.white),
                       ),
                       subtitle: Text(
-                        song['artist']!,
+                        song['artist'],
                         style: TextStyle(color: Colors.grey),
                       ),
-                      trailing:
-                          Icon(Icons.add_circle_outline, color: Colors.white),
-                      onTap: () {
-                        // Xử lý thêm bài hát vào playlist tại đây
-                      },
+                      trailing: Icon(
+                        Icons.add_circle_outline,
+                        color: Colors.white,
+                      ),
+                      onTap: () => _addSongToAlbum(song['id']),
                     );
                   }).toList(),
                 ],

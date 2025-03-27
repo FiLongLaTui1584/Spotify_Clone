@@ -13,7 +13,6 @@ class CreatePlaylistSheet extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Thanh kéo
           Container(
             width: 50,
             height: 5,
@@ -24,7 +23,6 @@ class CreatePlaylistSheet extends StatelessWidget {
           ),
           SizedBox(height: 20),
 
-          // Icon danh sách phát
           Row(
             children: [
               Icon(Icons.music_note, color: Colors.white, size: 40),
@@ -52,16 +50,14 @@ class CreatePlaylistSheet extends StatelessWidget {
 
           SizedBox(height: 20),
 
-          // Nút tạo mới playlist
           ElevatedButton(
             onPressed: () {
-              Navigator.pop(context); // Đóng bottom sheet hiện tại
+              Navigator.pop(context);
               showModalBottomSheet(
                 context: context,
                 isScrollControlled: true,
                 backgroundColor: Colors.transparent,
-                builder: (context) =>
-                    CreatePlaylistNameSheet(), // Gọi bottom sheet thứ 2
+                builder: (context) => CreatePlaylistNameSheet(),
               );
             },
             style: ElevatedButton.styleFrom(

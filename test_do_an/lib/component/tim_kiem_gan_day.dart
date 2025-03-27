@@ -1,37 +1,48 @@
 import 'package:flutter/material.dart';
+import 'package:test_do_an/helper/database_helper.dart'; // Import DatabaseHelper
+import 'package:test_do_an/helper/audio_player_manager.dart'; // Import AudioPlayerManager
 
-class TimKiemGanDay extends StatelessWidget {
+class TimKiemGanDay extends StatefulWidget {
+  @override
+  _TimKiemGanDayState createState() => _TimKiemGanDayState();
+}
+
+class _TimKiemGanDayState extends State<TimKiemGanDay> {
+  final TextEditingController _searchController = TextEditingController();
+  List<Map<String, dynamic>> _searchResults = [];
+  final AudioPlayerManager _audioManager = AudioPlayerManager();
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged() async {
+    String keyword = _searchController.text.trim();
+    if (keyword.isEmpty) {
+      setState(() {
+        _searchResults = [];
+      });
+      return;
+    }
+
+    // Tìm kiếm bài hát theo từ khóa
+    List<Map<String, dynamic>> results =
+        await DatabaseHelper.instance.searchSongsByTitle(keyword);
+    setState(() {
+      _searchResults = results;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    List<Map<String, String>> recentSearches = [
-      {'name': 'MONO', 'type': 'Nghệ sĩ', 'image': 'assets/images/random.png'},
-      {'name': 'ISAAC', 'type': 'Nghệ sĩ', 'image': 'assets/images/random.png'},
-      {
-        'name': 'Bầu trời mới',
-        'type': 'Bài hát - Da LAB, Minh Tốc & Lam',
-        'image': 'assets/images/random.png'
-      },
-      {'name': 'VŨ.', 'type': 'Nghệ sĩ', 'image': 'assets/images/random.png'},
-      {
-        'name': 'Ngủ một mình (tình rất tình)',
-        'type': 'Bài hát - HIEUTHUHAI, Negav, Kewtie',
-        'image': 'assets/images/random.png'
-      },
-      {'name': 'MONO', 'type': 'Nghệ sĩ', 'image': 'assets/images/random.png'},
-      {'name': 'ISAAC', 'type': 'Nghệ sĩ', 'image': 'assets/images/random.png'},
-      {
-        'name': 'Bầu trời mới',
-        'type': 'Bài hát - Da LAB, Minh Tốc & Lam',
-        'image': 'assets/images/random.png'
-      },
-      {'name': 'VŨ.', 'type': 'Nghệ sĩ', 'image': 'assets/images/random.png'},
-      {
-        'name': 'Ngủ một mình (tình rất tình)',
-        'type': 'Bài hát - HIEUTHUHAI, Negav, Kewtie',
-        'image': 'assets/images/random.png'
-      },
-    ];
-
     return Scaffold(
       backgroundColor: Color.fromRGBO(18, 18, 18, 1),
       body: Column(
@@ -39,7 +50,7 @@ class TimKiemGanDay extends StatelessWidget {
         children: [
           const SizedBox(height: 60), // Khoảng cách với phía trên
           _buildSearchBar(context),
-          const Padding(
+          Padding(
             padding: const EdgeInsets.only(
               left: 15.0,
               right: 15.0,
@@ -47,7 +58,9 @@ class TimKiemGanDay extends StatelessWidget {
               bottom: 10.0,
             ),
             child: Text(
-              'Nội dung tìm kiếm gần đây',
+              _searchController.text.isEmpty
+                  ? 'Nội dung gần đây'
+                  : 'Kết quả tìm kiếm',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 18,
@@ -56,48 +69,100 @@ class TimKiemGanDay extends StatelessWidget {
             ),
           ),
 
-          // Danh sách tìm kiếm gần đây
+          // Hiển thị danh sách
           Expanded(
-            child: ListView.builder(
-              padding: EdgeInsets.zero,
-              itemCount: recentSearches.length,
-              itemBuilder: (context, index) {
-                final item = recentSearches[index];
-                return ListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 15), // Thêm dòng này
-                  leading: CircleAvatar(
-                    backgroundImage: AssetImage(item['image']!),
-                  ),
-                  title: Text(item['name']!,
-                      style: TextStyle(color: Colors.white)),
-                  subtitle:
-                      Text(item['type']!, style: TextStyle(color: Colors.grey)),
-                  trailing: IconButton(
-                    icon: Icon(Icons.close, color: Colors.white),
-                    onPressed: () {
-                      // Xử lý xóa mục tìm kiếm (nếu cần)
+            child: _searchController.text.isEmpty
+                ? FutureBuilder<List<Map<String, dynamic>>>(
+                    future: DatabaseHelper.instance.getRandomSongs(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Center(child: CircularProgressIndicator());
+                      } else if (snapshot.hasError) {
+                        return Center(
+                          child: Text(
+                            'Lỗi khi tải bài hát: ${snapshot.error}',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        );
+                      } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                        return Center(
+                          child: Text(
+                            'Không có bài hát nào',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        );
+                      }
+
+                      final songs = snapshot.data!;
+                      return ListView.builder(
+                        padding: EdgeInsets.zero,
+                        itemCount: songs.length,
+                        itemBuilder: (context, index) {
+                          final song = songs[index];
+                          return ListTile(
+                            contentPadding:
+                                const EdgeInsets.symmetric(horizontal: 15),
+                            leading: CircleAvatar(
+                              backgroundImage: song['avatar'] != null
+                                  ? AssetImage(song['avatar'])
+                                  : AssetImage('assets/images/random.png')
+                                      as ImageProvider,
+                            ),
+                            title: Text(
+                              song['title'],
+                              style: TextStyle(color: Colors.white),
+                            ),
+                            subtitle: Text(
+                              'Bài hát - ${song['artist']}',
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                            onTap: () async {
+                              // Phát bài hát khi nhấn
+                              await _audioManager.playSongById(song['id']);
+                              setState(() {}); // Cập nhật UI nếu cần
+                            },
+                          );
+                        },
+                      );
                     },
-                  ),
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: 5),
-          // Nút xóa toàn bộ lịch sử
-          Center(
-            child: OutlinedButton(
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(color: Colors.white),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20)),
-              ),
-              onPressed: () {
-                // Xử lý xóa toàn bộ lịch sử tìm kiếm
-              },
-              child: const Text('Xóa nội dung tìm kiếm gần đây',
-                  style: TextStyle(color: Colors.white)),
-            ),
+                  )
+                : _searchResults.isEmpty
+                    ? Center(
+                        child: Text(
+                          'Không tìm thấy bài hát nào',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: EdgeInsets.zero,
+                        itemCount: _searchResults.length,
+                        itemBuilder: (context, index) {
+                          final song = _searchResults[index];
+                          return ListTile(
+                            contentPadding:
+                                const EdgeInsets.symmetric(horizontal: 15),
+                            leading: CircleAvatar(
+                              backgroundImage: song['avatar'] != null
+                                  ? AssetImage(song['avatar'])
+                                  : AssetImage('assets/images/random.png')
+                                      as ImageProvider,
+                            ),
+                            title: Text(
+                              song['title'],
+                              style: TextStyle(color: Colors.white),
+                            ),
+                            subtitle: Text(
+                              'Bài hát - ${song['artist']}',
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                            onTap: () async {
+                              // Phát bài hát khi nhấn
+                              await _audioManager.playSongById(song['id']);
+                              setState(() {}); // Cập nhật UI nếu cần
+                            },
+                          );
+                        },
+                      ),
           ),
           const SizedBox(height: 200),
         ],
@@ -125,8 +190,9 @@ class TimKiemGanDay extends StatelessWidget {
                   const SizedBox(width: 10),
                   const Icon(Icons.search, color: Colors.grey, size: 20),
                   const SizedBox(width: 10),
-                  const Expanded(
+                  Expanded(
                     child: TextField(
+                      controller: _searchController,
                       textAlignVertical: TextAlignVertical.center,
                       style: TextStyle(color: Colors.white),
                       decoration: InputDecoration(

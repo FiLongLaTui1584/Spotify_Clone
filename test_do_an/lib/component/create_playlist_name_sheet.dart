@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:test_do_an/page/playlist_detail.dart';
+import 'package:test_do_an/helper/database_helper.dart';
+import 'package:test_do_an/helper/user_session.dart';
 
 class CreatePlaylistNameSheet extends StatelessWidget {
   @override
@@ -7,11 +8,10 @@ class CreatePlaylistNameSheet extends StatelessWidget {
     TextEditingController _controller = TextEditingController();
 
     return Container(
-      height:
-          MediaQuery.of(context).size.height * 0.9, // Chiều cao 80% màn hình
+      height: MediaQuery.of(context).size.height * 0.9,
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Color.fromRGBO(53, 53, 53, 1), // Màu nền
+        color: Color.fromRGBO(53, 53, 53, 1),
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
@@ -59,19 +59,41 @@ class CreatePlaylistNameSheet extends StatelessWidget {
               ),
             ),
           ),
-
           SizedBox(height: 20),
-
-          // Nút "Tạo"
           ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context); // Đóng Bottom Sheet
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => PlaylistDetailPage(),
-                ),
+            onPressed: () async {
+              String playlistName = _controller.text.trim();
+              if (playlistName.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Vui lòng nhập tên danh sách phát')),
+                );
+                return;
+              }
+
+              int? userId = UserSession.currentUser?['id'];
+              print('User ID: $userId');
+              if (userId == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                      content: Text('Không tìm thấy thông tin người dùng')),
+                );
+                return;
+              }
+
+              int albumId = await DatabaseHelper.instance
+                  .createAlbum(userId, playlistName);
+              if (albumId == -1) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Lỗi khi tạo danh sách phát')),
+                );
+                return;
+              }
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Tạo danh sách phát thành công')),
               );
+
+              Navigator.pop(context);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.green,

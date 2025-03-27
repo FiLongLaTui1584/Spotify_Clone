@@ -61,6 +61,22 @@ class AudioPlayerManager {
     });
   }
 
+  // Thêm hàm để phát bài hát theo id
+  Future<void> playSongById(int songId) async {
+    // Tìm bài hát trong danh sách _songs dựa trên id
+    int? index = _songs.indexWhere((song) => song['id'] == songId);
+    if (index != -1) {
+      // Cập nhật _currentIndex và phát bài hát
+      _currentIndex = index;
+      await _loadSongAtIndex(_currentIndex);
+      _audioPlayer.play(); // Phát bài hát ngay lập tức
+      _isPlaying = true;
+      _isCompleted = false;
+    } else {
+      print('Không tìm thấy bài hát với id: $songId');
+    }
+  }
+
   void togglePlayPause() {
     if (_isPlaying) {
       _audioPlayer.pause();
