@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:test_do_an/helper/audio_player_manager.dart';
 import 'package:test_do_an/helper/database_helper.dart';
+import 'package:test_do_an/helper/user_session.dart';
 import 'package:test_do_an/page/artist_album.dart';
 
-class ArtistInfoPage extends StatelessWidget {
+class ArtistInfoPage extends StatefulWidget {
   final int artistId;
   final String artistName;
   final String artistAvatar;
@@ -13,6 +15,61 @@ class ArtistInfoPage extends StatelessWidget {
     required this.artistName,
     required this.artistAvatar,
   }) : super(key: key);
+
+  @override
+  _ArtistInfoPageState createState() => _ArtistInfoPageState();
+}
+
+class _ArtistInfoPageState extends State<ArtistInfoPage> {
+  bool _isFollowing = false;
+  final AudioPlayerManager _audioManager = AudioPlayerManager();
+
+  @override
+  void initState() {
+    super.initState();
+    _checkIfFollowing();
+  }
+
+  Future<void> _checkIfFollowing() async {
+    int? userId = UserSession.currentUser?['id'];
+    if (userId == null) return;
+
+    bool isFollowing = await DatabaseHelper.instance.isFollowingArtist(
+      userId,
+      widget.artistId,
+    );
+    setState(() {
+      _isFollowing = isFollowing;
+    });
+  }
+
+  Future<void> _toggleFollow() async {
+    int? userId = UserSession.currentUser?['id'];
+    if (userId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Vui lòng đăng nhập để theo dõi nghệ sĩ')),
+      );
+      return;
+    }
+
+    if (_isFollowing) {
+      await DatabaseHelper.instance.unfollowArtist(userId, widget.artistId);
+      setState(() {
+        _isFollowing = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Đã bỏ theo dõi ${widget.artistName}')),
+      );
+    } else {
+      await DatabaseHelper.instance.followArtist(userId, widget.artistId);
+      setState(() {
+        _isFollowing = true;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Đã theo dõi ${widget.artistName}')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +90,7 @@ class ArtistInfoPage extends StatelessWidget {
                   _buildSectionTitle('Phổ biến'),
                   _buildSongList(),
                   SizedBox(height: 15),
-                  _buildSectionTitle('Có sự tham gia của $artistName'),
+                  _buildSectionTitle('Có sự tham gia của ${widget.artistName}'),
                   SizedBox(height: 10),
                   _buildFeaturedPlaylists(context),
                   SizedBox(height: 40),
@@ -51,7 +108,7 @@ class ArtistInfoPage extends StatelessWidget {
     return Stack(
       children: [
         Image.asset(
-          artistAvatar,
+          widget.artistAvatar,
           fit: BoxFit.cover,
           width: double.infinity,
           height: 400,
@@ -79,7 +136,7 @@ class ArtistInfoPage extends StatelessWidget {
             Row(
               children: [
                 Text(
-                  artistName,
+                  widget.artistName,
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 30,
@@ -99,25 +156,43 @@ class ArtistInfoPage extends StatelessWidget {
         CircleAvatar(
           backgroundColor: Colors.green,
           radius: 25,
-          child: Icon(Icons.play_arrow, color: Colors.black, size: 35),
+          child: IconButton(
+            icon: Icon(Icons.play_arrow, color: Colors.black, size: 35),
+            onPressed: () async {
+              List<Map<String, dynamic>> songs = await DatabaseHelper.instance
+                  .getSongsByArtist(widget.artistId);
+              if (songs.isNotEmpty) {
+                await _audioManager.playSongById(songs.first['id']);
+                setState(() {}); // Cập nhật UI nếu cần
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Không có bài hát nào để phát')),
+                );
+              }
+            },
+          ),
         ),
       ],
     );
   }
 
-  /// Nút "Đang theo dõi"
+  /// Nút "Theo dõi" hoặc "Đang theo dõi"
   Widget _buildFollowButton() {
     return ElevatedButton(
-      onPressed: () {},
+      onPressed: _toggleFollow,
       style: ElevatedButton.styleFrom(
-        backgroundColor: Color.fromRGBO(18, 18, 18, 1),
-        side: BorderSide(color: Colors.white, width: 1),
+        backgroundColor:
+            _isFollowing ? Color.fromRGBO(18, 18, 18, 1) : Colors.white,
+        side: _isFollowing ? BorderSide(color: Colors.white, width: 1) : null,
         padding: EdgeInsets.symmetric(horizontal: 15, vertical: 5),
         minimumSize: Size(80, 30),
       ),
       child: Text(
-        'Đang theo dõi',
-        style: TextStyle(color: Colors.white, fontSize: 10),
+        _isFollowing ? 'Đang theo dõi' : 'Theo dõi',
+        style: TextStyle(
+          color: _isFollowing ? Colors.white : Colors.black,
+          fontSize: 10,
+        ),
       ),
     );
   }
@@ -137,7 +212,7 @@ class ArtistInfoPage extends StatelessWidget {
   /// Danh sách bài hát phổ biến
   Widget _buildSongList() {
     return FutureBuilder<List<Map<String, dynamic>>>(
-      future: DatabaseHelper.instance.getSongsByArtist(artistId),
+      future: DatabaseHelper.instance.getSongsByArtist(widget.artistId),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(child: CircularProgressIndicator());
@@ -171,6 +246,7 @@ class ArtistInfoPage extends StatelessWidget {
               song['avatar'] ?? 'assets/images/random.png',
               song['title'],
               '2,120,730,968', // Lượt nghe giả
+              song['id'],
             );
           },
         );
@@ -179,9 +255,21 @@ class ArtistInfoPage extends StatelessWidget {
   }
 
   /// Tạo một ListTile có số thứ tự
-  Widget _buildListTile(int index, String? image, String? title, String? subtitle) {
+  Widget _buildListTile(
+      int index, String? image, String? title, String? subtitle, int songId) {
     return ListTile(
       contentPadding: EdgeInsets.zero,
+      onTap: () async {
+        // Phát bài hát khi nhấn, truyền id của bài hát
+        try {
+          await _audioManager.playSongById(songId);
+          setState(() {}); // Cập nhật UI nếu cần
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Lỗi khi phát bài hát: $e')),
+          );
+        }
+      },
       leading: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -213,7 +301,7 @@ class ArtistInfoPage extends StatelessWidget {
   /// Danh sách album từ artist_albums
   Widget _buildFeaturedPlaylists(BuildContext context) {
     return FutureBuilder<List<Map<String, dynamic>>>(
-      future: DatabaseHelper.instance.getArtistAlbums(artistId),
+      future: DatabaseHelper.instance.getArtistAlbums(widget.artistId),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(child: CircularProgressIndicator());
@@ -244,7 +332,14 @@ class ArtistInfoPage extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => Artist_Album_Detail_Page(),
+                      builder: (context) => Artist_Album_Detail_Page(
+                        artistId: widget.artistId,
+                        artistName: widget.artistName,
+                        artistAvatar: widget.artistAvatar,
+                        albumName: album['name'],
+                        albumAvatar:
+                            album['avatar'] ?? 'assets/images/random.png',
+                      ),
                     ),
                   );
                 },

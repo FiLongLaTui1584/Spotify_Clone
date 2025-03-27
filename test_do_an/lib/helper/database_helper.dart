@@ -153,6 +153,40 @@ class DatabaseHelper {
     );
   }
 
+  // Hàm kiểm tra xem người dùng đã theo dõi nghệ sĩ hay chưa
+  Future<bool> isFollowingArtist(int userId, int artistId) async {
+    final db = await database;
+    List<Map<String, dynamic>> result = await db.query(
+      'followed_artists',
+      where: 'userId = ? AND artistId = ?',
+      whereArgs: [userId, artistId],
+    );
+    return result.isNotEmpty;
+  }
+
+  // Hàm để theo dõi nghệ sĩ
+  Future<void> followArtist(int userId, int artistId) async {
+    final db = await database;
+    await db.insert(
+      'followed_artists',
+      {
+        'userId': userId,
+        'artistId': artistId,
+      },
+      conflictAlgorithm: ConflictAlgorithm.ignore,
+    );
+  }
+
+  // Hàm để bỏ theo dõi nghệ sĩ
+  Future<void> unfollowArtist(int userId, int artistId) async {
+    final db = await database;
+    await db.delete(
+      'followed_artists',
+      where: 'userId = ? AND artistId = ?',
+      whereArgs: [userId, artistId],
+    );
+  }
+
   // Hàm lấy bài hát hiện tại (dựa trên id)
   Future<Map<String, dynamic>?> getSongById(int id) async {
     final db = await database;
@@ -175,6 +209,7 @@ class DatabaseHelper {
         'id': song['id'],
         'title': song['title'],
         'artist': artistName,
+        'artistId': song['artistId'], // Thêm artistId
         'filePath': song['filePath'],
         'avatar': song['avatar'],
         'lyrics': song['lyrics'],
@@ -201,6 +236,7 @@ class DatabaseHelper {
         'id': song['id'],
         'title': song['title'],
         'artist': artistName,
+        'artistId': song['artistId'], // Thêm artistId
         'filePath': song['filePath'],
         'avatar': song['avatar'],
         'lyrics': song['lyrics'],
@@ -283,6 +319,7 @@ class DatabaseHelper {
         'id': song['id'],
         'title': song['title'],
         'artist': artistName,
+        'artistId': song['artistId'], // Thêm artistId
         'filePath': song['filePath'],
         'avatar': song['avatar'],
         'lyrics': song['lyrics'],
@@ -312,6 +349,7 @@ class DatabaseHelper {
         'id': song['id'],
         'title': song['title'],
         'artist': artistName,
+        'artistId': song['artistId'], // Thêm artistId
         'filePath': song['filePath'],
         'avatar': song['avatar'],
         'lyrics': song['lyrics'],

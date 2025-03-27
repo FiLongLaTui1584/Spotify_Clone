@@ -24,6 +24,7 @@ class _SongDetailPageState extends State<SongDetailPage> {
   List<double> _lineHeights = [];
   List<GlobalKey> _lineKeys = [];
   bool _isFavorite = false;
+  bool _isFollowing = false;
 
   @override
   void initState() {
@@ -32,6 +33,7 @@ class _SongDetailPageState extends State<SongDetailPage> {
     _updateLyricBoxColor();
     _parseLyricsToList();
     _checkIfFavorite();
+    _checkIfFollowing();
   }
 
   void _setupAudioListeners() {
@@ -54,6 +56,7 @@ class _SongDetailPageState extends State<SongDetailPage> {
           _updateLyricBoxColor();
           _parseLyricsToList();
           _checkIfFavorite();
+          _checkIfFollowing();
         });
       }
     });
@@ -231,6 +234,54 @@ class _SongDetailPageState extends State<SongDetailPage> {
     });
   }
 
+  Future<void> _checkIfFollowing() async {
+    int? userId = UserSession.currentUser?['id'];
+    if (userId == null || _audioManager.currentSong == null || _audioManager.currentSong!['artistId'] == null) return;
+
+    bool isFollowing = await DatabaseHelper.instance.isFollowingArtist(
+      userId,
+      _audioManager.currentSong!['artistId'],
+    );
+    setState(() {
+      _isFollowing = isFollowing;
+    });
+  }
+
+  Future<void> _toggleFollow() async {
+    int? userId = UserSession.currentUser?['id'];
+    if (userId == null || _audioManager.currentSong == null || _audioManager.currentSong!['artistId'] == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Vui lòng đăng nhập để theo dõi nghệ sĩ')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isFollowing = !_isFollowing; // Tạm thời đổi trạng thái để hiển thị giao diện
+    });
+
+    try {
+      if (_isFollowing) {
+        await DatabaseHelper.instance.followArtist(userId, _audioManager.currentSong!['artistId']);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Đã theo dõi ${_audioManager.currentSong!['artist']}')),
+        );
+      } else {
+        await DatabaseHelper.instance.unfollowArtist(userId, _audioManager.currentSong!['artistId']);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Đã bỏ theo dõi ${_audioManager.currentSong!['artist']}')),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isFollowing = !_isFollowing; // Hoàn nguyên trạng thái nếu có lỗi
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi: $e')),
+      );
+    }
+  }
+
   Future<void> _toggleFavorite() async {
     int? userId = UserSession.currentUser?['id'];
     if (userId == null || _audioManager.currentSong == null) return;
@@ -307,7 +358,7 @@ class _SongDetailPageState extends State<SongDetailPage> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 15),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -518,7 +569,7 @@ class _SongDetailPageState extends State<SongDetailPage> {
                   _buildContributor(
                     _audioManager.currentSong?['artist'] ?? 'HIEUTHUHAI',
                     "Nghệ sĩ chính",
-                    true,
+                    _isFollowing,
                   ),
                 ],
               ),
@@ -549,7 +600,10 @@ class _SongDetailPageState extends State<SongDetailPage> {
                       artistAvatar: artist['avatar'] ?? 'assets/images/random.png',
                     ),
                   ),
-                );
+                ).then((_) {
+                  // Làm mới trạng thái theo dõi khi quay lại từ ArtistInfoPage
+                  _checkIfFollowing();
+                });
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Không tìm thấy thông tin nghệ sĩ')),
@@ -577,20 +631,22 @@ class _SongDetailPageState extends State<SongDetailPage> {
               ],
             ),
           ),
-          if (isFollowing)
-            OutlinedButton(
-              onPressed: () {},
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(color: Colors.white),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-              ),
-              child: Text(
-                "Đang theo dõi",
-                style: TextStyle(color: Colors.white),
+          ElevatedButton(
+            onPressed: _toggleFollow,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isFollowing ? Color.fromRGBO(18, 18, 18, 1) : Colors.white,
+              side: isFollowing ? BorderSide(color: Colors.white, width: 1) : null,
+              padding: EdgeInsets.symmetric(horizontal: 15, vertical: 5),
+              minimumSize: Size(80, 30),
+            ),
+            child: Text(
+              isFollowing ? 'Đang theo dõi' : 'Theo dõi',
+              style: TextStyle(
+                color: isFollowing ? Colors.white : Colors.black,
+                fontSize: 10,
               ),
             ),
+          ),
         ],
       ),
     );

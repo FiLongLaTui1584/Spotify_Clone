@@ -14,7 +14,8 @@ class AudioPlayerManager {
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
 
   AudioPlayer get audioPlayer => _audioPlayer;
-  Map<String, dynamic>? get currentSong => _songs.isNotEmpty ? _songs[_currentIndex] : null;
+  Map<String, dynamic>? get currentSong =>
+      _songs.isNotEmpty ? _songs[_currentIndex] : null;
   bool get isPlaying => _isPlaying;
   bool get isCompleted => _isCompleted;
   int get currentIndex => _currentIndex;
