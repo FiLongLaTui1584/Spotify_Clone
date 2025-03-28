@@ -35,7 +35,7 @@ class SettingsPage extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.only(bottom: 470.0),
+            padding: const EdgeInsets.only(bottom: 320.0),
             child: OutlinedButton(
               style: OutlinedButton.styleFrom(
                 backgroundColor: Colors.white,
