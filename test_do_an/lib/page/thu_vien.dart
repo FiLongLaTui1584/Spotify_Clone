@@ -61,7 +61,7 @@ class _ThuVienState extends State<ThuVien> {
 
   Widget _buildHeader(String userName, String? avatarPath) {
     return Padding(
-      padding: const EdgeInsets.only(left: 15, right: 15, top: 56, bottom: 20),
+      padding: const EdgeInsets.only(left: 15, right: 0, top: 56, bottom: 20),
       child: Row(
         children: [
           GestureDetector(
@@ -319,8 +319,8 @@ class _ThuVienState extends State<ThuVien> {
           ClipRRect(
             child: Image.asset(
               album['image'],
-              width: 90,
-              height: 90,
+              width: 80,
+              height: 80,
               fit: BoxFit.cover,
             ),
           ),
@@ -329,7 +329,7 @@ class _ThuVienState extends State<ThuVien> {
             album['name'],
             style: TextStyle(
               color: Colors.white,
-              fontSize: 14,
+              fontSize: 12,
               fontWeight: FontWeight.bold,
             ),
             textAlign: TextAlign.center,
@@ -338,7 +338,7 @@ class _ThuVienState extends State<ThuVien> {
             'Album',
             style: TextStyle(
               color: Colors.grey,
-              fontSize: 10,
+              fontSize: 8,
             ),
           ),
         ],
@@ -476,7 +476,7 @@ class _ThuVienState extends State<ThuVien> {
       child: Column(
         children: [
           CircleAvatar(
-            radius: 45,
+            radius: 35,
             backgroundImage: AssetImage(artist['image']!),
           ),
           const SizedBox(height: 8),
@@ -493,7 +493,7 @@ class _ThuVienState extends State<ThuVien> {
             'Nghệ sĩ',
             style: TextStyle(
               color: Colors.grey,
-              fontSize: 10,
+              fontSize: 8,
             ),
           ),
         ],

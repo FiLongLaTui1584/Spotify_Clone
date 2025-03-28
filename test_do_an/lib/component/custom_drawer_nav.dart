@@ -20,7 +20,7 @@ class _NavigationWidgetState extends State<NavigationWidget> {
     String? avatarPath = UserSession.currentUser?['avatar']; // Đường dẫn avatar
 
     return Drawer(
-      width: 370,
+      width: 270,
       child: Container(
         color: Color.fromRGBO(31, 31, 31, 1),
         child: ListView(
