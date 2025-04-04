@@ -38,7 +38,8 @@ class _SongDetailPageState extends State<SongDetailPage> {
 
   void _setupAudioListeners() {
     // Lấy tổng thời gian bài hát
-    _totalDuration = _audioManager.audioPlayer.duration?.inSeconds.toDouble() ?? 196;
+    _totalDuration =
+        _audioManager.audioPlayer.duration?.inSeconds.toDouble() ?? 196;
     // Lắng nghe vị trí phát nhạc
     _audioManager.audioPlayer.positionStream.listen((position) {
       if (mounted) {
@@ -52,7 +53,8 @@ class _SongDetailPageState extends State<SongDetailPage> {
     _audioManager.audioPlayer.playerStateStream.listen((state) {
       if (mounted) {
         setState(() {
-          _totalDuration = _audioManager.audioPlayer.duration?.inSeconds.toDouble() ?? 196;
+          _totalDuration =
+              _audioManager.audioPlayer.duration?.inSeconds.toDouble() ?? 196;
           _updateLyricBoxColor();
           _parseLyricsToList();
           _checkIfFavorite();
@@ -64,15 +66,18 @@ class _SongDetailPageState extends State<SongDetailPage> {
 
   Future<void> _updateLyricBoxColor() async {
     if (_audioManager.currentSong != null) {
-      final String avatarPath = _audioManager.currentSong!['avatar'] ?? 'assets/images/random.png';
+      final String avatarPath =
+          _audioManager.currentSong!['avatar'] ?? 'assets/images/random.png';
       try {
-        final PaletteGenerator paletteGenerator = await PaletteGenerator.fromImageProvider(
+        final PaletteGenerator paletteGenerator =
+            await PaletteGenerator.fromImageProvider(
           AssetImage(avatarPath),
           size: const Size(418, 418),
           maximumColorCount: 20,
         );
 
-        Color dominantColor = paletteGenerator.dominantColor?.color ?? Colors.red;
+        Color dominantColor =
+            paletteGenerator.dominantColor?.color ?? Colors.red;
         double luminance = dominantColor.computeLuminance();
         Color newTextColor = luminance < 0.5 ? Colors.white : Colors.black;
 
@@ -95,10 +100,12 @@ class _SongDetailPageState extends State<SongDetailPage> {
     _lyricsList.clear();
     _lineKeys.clear();
     _lineHeights.clear();
-    if (_audioManager.currentSong != null && _audioManager.currentSong!['lyrics'] != null) {
+    if (_audioManager.currentSong != null &&
+        _audioManager.currentSong!['lyrics'] != null) {
       print('Lyrics từ database: ${_audioManager.currentSong!['lyrics']}');
       try {
-        Map<String, String> lyrics = Map<String, String>.from(jsonDecode(_audioManager.currentSong!['lyrics']));
+        Map<String, String> lyrics = Map<String, String>.from(
+            jsonDecode(_audioManager.currentSong!['lyrics']));
         _lyricsList = lyrics.entries.toList();
         // Sắp xếp theo thời gian
         _lyricsList.sort((a, b) {
@@ -167,7 +174,8 @@ class _SongDetailPageState extends State<SongDetailPage> {
   void _scrollToCurrentLyric() {
     if (_scrollController.hasClients && _currentLyricIndex >= 0) {
       // Kiểm tra xem chiều cao của dòng hiện tại đã được cập nhật chưa
-      if (_currentLyricIndex >= _lineHeights.length || _lineHeights[_currentLyricIndex] <= 0.0) {
+      if (_currentLyricIndex >= _lineHeights.length ||
+          _lineHeights[_currentLyricIndex] <= 0.0) {
         // Nếu chưa cập nhật, đợi và thử lại sau
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _scrollToCurrentLyric();
@@ -185,10 +193,12 @@ class _SongDetailPageState extends State<SongDetailPage> {
       double currentLineHeight = _lineHeights[_currentLyricIndex];
 
       // Căn giữa câu hát trong khung nhìn
-      double adjustedPosition = position - (viewportHeight / 2) + (currentLineHeight / 2);
+      double adjustedPosition =
+          position - (viewportHeight / 2) + (currentLineHeight / 2);
 
       // Đảm bảo không cuộn âm hoặc vượt quá giới hạn
-      adjustedPosition = adjustedPosition.clamp(0.0, _scrollController.position.maxScrollExtent);
+      adjustedPosition = adjustedPosition.clamp(
+          0.0, _scrollController.position.maxScrollExtent);
 
       _scrollController.animateTo(
         adjustedPosition,
@@ -236,7 +246,9 @@ class _SongDetailPageState extends State<SongDetailPage> {
 
   Future<void> _checkIfFollowing() async {
     int? userId = UserSession.currentUser?['id'];
-    if (userId == null || _audioManager.currentSong == null || _audioManager.currentSong!['artistId'] == null) return;
+    if (userId == null ||
+        _audioManager.currentSong == null ||
+        _audioManager.currentSong!['artistId'] == null) return;
 
     bool isFollowing = await DatabaseHelper.instance.isFollowingArtist(
       userId,
@@ -249,7 +261,9 @@ class _SongDetailPageState extends State<SongDetailPage> {
 
   Future<void> _toggleFollow() async {
     int? userId = UserSession.currentUser?['id'];
-    if (userId == null || _audioManager.currentSong == null || _audioManager.currentSong!['artistId'] == null) {
+    if (userId == null ||
+        _audioManager.currentSong == null ||
+        _audioManager.currentSong!['artistId'] == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Vui lòng đăng nhập để theo dõi nghệ sĩ')),
       );
@@ -257,19 +271,26 @@ class _SongDetailPageState extends State<SongDetailPage> {
     }
 
     setState(() {
-      _isFollowing = !_isFollowing; // Tạm thời đổi trạng thái để hiển thị giao diện
+      _isFollowing =
+          !_isFollowing; // Tạm thời đổi trạng thái để hiển thị giao diện
     });
 
     try {
       if (_isFollowing) {
-        await DatabaseHelper.instance.followArtist(userId, _audioManager.currentSong!['artistId']);
+        await DatabaseHelper.instance
+            .followArtist(userId, _audioManager.currentSong!['artistId']);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Đã theo dõi ${_audioManager.currentSong!['artist']}')),
+          SnackBar(
+              content:
+                  Text('Đã theo dõi ${_audioManager.currentSong!['artist']}')),
         );
       } else {
-        await DatabaseHelper.instance.unfollowArtist(userId, _audioManager.currentSong!['artistId']);
+        await DatabaseHelper.instance
+            .unfollowArtist(userId, _audioManager.currentSong!['artistId']);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Đã bỏ theo dõi ${_audioManager.currentSong!['artist']}')),
+          SnackBar(
+              content: Text(
+                  'Đã bỏ theo dõi ${_audioManager.currentSong!['artist']}')),
         );
       }
     } catch (e) {
@@ -322,35 +343,30 @@ class _SongDetailPageState extends State<SongDetailPage> {
     return Scaffold(
       backgroundColor: Color.fromRGBO(18, 18, 18, 1),
       appBar: AppBar(
-        backgroundColor: Color.fromRGBO(18, 18, 18, 1),
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: Icon(Icons.expand_more, color: Colors.white, size: 35),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          _audioManager.currentSong?['title'] ?? 'NOLOVENOLIFE',
-          style: TextStyle(color: Colors.white, fontSize: 15),
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.more_horiz, color: Colors.white, size: 30),
-            onPressed: () {},
+          backgroundColor: Color.fromRGBO(18, 18, 18, 1),
+          elevation: 0,
+          centerTitle: true,
+          leading: IconButton(
+            icon: Icon(Icons.expand_more, color: Colors.white, size: 35),
+            onPressed: () => Navigator.pop(context),
           ),
-        ],
-      ),
+          title: Text(
+            _audioManager.currentSong?['title'] ?? 'NOLOVENOLIFE',
+            style: TextStyle(color: Colors.white, fontSize: 15),
+          )),
       body: SingleChildScrollView(
         physics: BouncingScrollPhysics(),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Padding(
-              padding: const EdgeInsets.only(left: 15, right: 15, top: 30, bottom: 30),
+              padding: const EdgeInsets.only(
+                  left: 15, right: 15, top: 30, bottom: 30),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: Image.asset(
-                  _audioManager.currentSong?['avatar'] ?? 'assets/images/random.png',
+                  _audioManager.currentSong?['avatar'] ??
+                      'assets/images/random.png',
                   width: 418,
                   height: 418,
                   fit: BoxFit.cover,
@@ -358,7 +374,7 @@ class _SongDetailPageState extends State<SongDetailPage> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 15),
+              padding: const EdgeInsets.symmetric(horizontal: 17),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -391,7 +407,8 @@ class _SongDetailPageState extends State<SongDetailPage> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.only(left: 20, right: 20, top: 25, bottom: 8),
+              padding: const EdgeInsets.only(
+                  left: 20, right: 20, top: 25, bottom: 8),
               child: Column(
                 children: [
                   SliderTheme(
@@ -407,7 +424,8 @@ class _SongDetailPageState extends State<SongDetailPage> {
                       onChanged: (value) {
                         setState(() {
                           _currentTime = value;
-                          _audioManager.audioPlayer.seek(Duration(seconds: value.toInt()));
+                          _audioManager.audioPlayer
+                              .seek(Duration(seconds: value.toInt()));
                         });
                       },
                       activeColor: Color.fromARGB(166, 222, 219, 219),
@@ -415,7 +433,8 @@ class _SongDetailPageState extends State<SongDetailPage> {
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 5),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 0, vertical: 5),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -449,8 +468,11 @@ class _SongDetailPageState extends State<SongDetailPage> {
                     onPressed: _rewind10Seconds,
                   ),
                   IconButton(
-                    icon: Icon(Icons.skip_previous, color: Colors.white, size: 50),
-                    onPressed: _audioManager.currentIndex > 0 ? _audioManager.skipPrevious : null,
+                    icon: Icon(Icons.skip_previous,
+                        color: Colors.white, size: 50),
+                    onPressed: _audioManager.currentIndex > 0
+                        ? _audioManager.skipPrevious
+                        : null,
                   ),
                   IconButton(
                     icon: Icon(
@@ -471,7 +493,9 @@ class _SongDetailPageState extends State<SongDetailPage> {
                   IconButton(
                     icon: Icon(Icons.skip_next, color: Colors.white, size: 50),
                     onPressed: _audioManager.currentIndex <
-                            (_audioManager.currentSong != null ? _audioManager.currentIndex + 1 : 0)
+                            (_audioManager.currentSong != null
+                                ? _audioManager.currentIndex + 1
+                                : 0)
                         ? _audioManager.skipNext
                         : null,
                   ),
@@ -514,13 +538,16 @@ class _SongDetailPageState extends State<SongDetailPage> {
                       itemBuilder: (context, index) {
                         // Đo chiều cao của dòng lyric
                         WidgetsBinding.instance.addPostFrameCallback((_) {
-                          final RenderBox? renderBox =
-                              _lineKeys[index].currentContext?.findRenderObject() as RenderBox?;
-                          if (renderBox != null && _lineHeights[index] != renderBox.size.height) {
+                          final RenderBox? renderBox = _lineKeys[index]
+                              .currentContext
+                              ?.findRenderObject() as RenderBox?;
+                          if (renderBox != null &&
+                              _lineHeights[index] != renderBox.size.height) {
                             setState(() {
                               _lineHeights[index] = renderBox.size.height;
                               // Gọi _scrollToCurrentLyric() ngay khi đo được chiều cao của dòng hiện tại
-                              if (_currentLyricIndex >= 0 && _lineHeights[_currentLyricIndex] > 0.0) {
+                              if (_currentLyricIndex >= 0 &&
+                                  _lineHeights[_currentLyricIndex] > 0.0) {
                                 _scrollToCurrentLyric();
                               }
                             });
@@ -537,7 +564,9 @@ class _SongDetailPageState extends State<SongDetailPage> {
                                   ? _textColor
                                   : _textColor.withOpacity(0.5),
                               fontSize: 21,
-                              fontWeight: index == _currentLyricIndex ? FontWeight.bold : FontWeight.normal,
+                              fontWeight: index == _currentLyricIndex
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
                             ),
                           ),
                         );
@@ -589,7 +618,8 @@ class _SongDetailPageState extends State<SongDetailPage> {
         children: [
           GestureDetector(
             onTap: () async {
-              Map<String, dynamic>? artist = await DatabaseHelper.instance.getArtistByName(name);
+              Map<String, dynamic>? artist =
+                  await DatabaseHelper.instance.getArtistByName(name);
               if (artist != null) {
                 Navigator.push(
                   context,
@@ -597,7 +627,8 @@ class _SongDetailPageState extends State<SongDetailPage> {
                     builder: (context) => ArtistInfoPage(
                       artistId: artist['id'],
                       artistName: artist['name'],
-                      artistAvatar: artist['avatar'] ?? 'assets/images/random.png',
+                      artistAvatar:
+                          artist['avatar'] ?? 'assets/images/random.png',
                     ),
                   ),
                 ).then((_) {
@@ -634,8 +665,11 @@ class _SongDetailPageState extends State<SongDetailPage> {
           ElevatedButton(
             onPressed: _toggleFollow,
             style: ElevatedButton.styleFrom(
-              backgroundColor: isFollowing ? Color.fromRGBO(18, 18, 18, 1) : Colors.white,
-              side: isFollowing ? BorderSide(color: Colors.white, width: 1) : null,
+              backgroundColor:
+                  isFollowing ? Color.fromRGBO(18, 18, 18, 1) : Colors.white,
+              side: isFollowing
+                  ? BorderSide(color: Colors.white, width: 1)
+                  : null,
               padding: EdgeInsets.symmetric(horizontal: 15, vertical: 5),
               minimumSize: Size(80, 30),
             ),

@@ -5,6 +5,7 @@ import 'package:test_do_an/component/edit_profile.dart';
 import '/component/custom_music_bar.dart';
 import '/component/custom_drawer_nav.dart';
 import 'dart:io'; // Import để dùng File
+import 'package:test_do_an/helper/database_helper.dart'; // Import DatabaseHelper
 
 class AccountPage extends StatefulWidget {
   @override
@@ -13,6 +14,23 @@ class AccountPage extends StatefulWidget {
 
 class _AccountPageState extends State<AccountPage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  int followedArtistsCount = 0; // Biến để lưu số lượng nghệ sĩ đang theo dõi
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFollowedArtistsCount();
+  }
+
+  Future<void> _loadFollowedArtistsCount() async {
+    int? userId = UserSession.currentUser?['id'];
+    if (userId != null) {
+      int count = await DatabaseHelper.instance.getFollowedArtistsCount(userId);
+      setState(() {
+        followedArtistsCount = count;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -57,8 +75,10 @@ class _AccountPageState extends State<AccountPage> {
   }
 
   Widget _buildHeader() {
-    String userName = UserSession.currentUser?['name'] ?? 'Người dùng'; // Lấy tên từ database
-    String? avatarPath = UserSession.currentUser?['avatar']; // Lấy avatar từ database
+    String userName =
+        UserSession.currentUser?['name'] ?? 'Người dùng'; // Lấy tên từ database
+    String? avatarPath =
+        UserSession.currentUser?['avatar']; // Lấy avatar từ database
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 15.0),
@@ -85,7 +105,7 @@ class _AccountPageState extends State<AccountPage> {
               ),
               const SizedBox(height: 5),
               Text(
-                'Đang theo dõi 37',
+                'Đang theo dõi $followedArtistsCount', // Hiển thị số lượng thực tế
                 style: TextStyle(color: Colors.grey, fontSize: 14),
               ),
             ],
@@ -104,7 +124,8 @@ class _AccountPageState extends State<AccountPage> {
           OutlinedButton(
             style: OutlinedButton.styleFrom(
               side: BorderSide(color: Colors.white),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20)),
             ),
             onPressed: () {
               showModalBottomSheet(

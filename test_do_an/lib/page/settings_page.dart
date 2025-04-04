@@ -33,34 +33,7 @@ class SettingsPage extends StatelessWidget {
                 _buildListItem("Giới thiệu"),
               ],
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 320.0),
-            child: OutlinedButton(
-              style: OutlinedButton.styleFrom(
-                backgroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                padding: EdgeInsets.symmetric(horizontal: 35, vertical: 10),
-              ),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => IntroWidget(),
-                  ),
-                );
-              },
-              child: Text(
-                "Đăng xuất",
-                style: TextStyle(
-                    color: Colors.black,
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold),
-              ),
-            ),
-          ),
+          )
         ],
       ),
     );

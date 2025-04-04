@@ -24,6 +24,20 @@ class _ArtistInfoPageState extends State<ArtistInfoPage> {
   bool _isFollowing = false;
   final AudioPlayerManager _audioManager = AudioPlayerManager();
 
+  // Danh sách lượt nghe giả
+  final List<String> fakePlays = [
+    '2,947,313,698', // Lớn nhất
+    '1,829,115,451',
+    '1,524,533,269',
+    '924,123,456',
+    '624,987,654',
+    '324,456,789',
+    '224,123,654',
+    '124,789,321',
+    '94,567,890',
+    '54,321,987', // Nhỏ nhất
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -241,11 +255,13 @@ class _ArtistInfoPageState extends State<ArtistInfoPage> {
           itemCount: songs.length,
           itemBuilder: (context, index) {
             final song = songs[index];
+            // Gán lượt nghe giả theo chỉ số, nếu vượt quá độ dài fakePlays thì lặp lại
+            String fakePlay = fakePlays[index % fakePlays.length];
             return _buildListTile(
               index,
               song['avatar'] ?? 'assets/images/random.png',
               song['title'],
-              '2,120,730,968', // Lượt nghe giả
+              fakePlay, // Sử dụng lượt nghe giả
               song['id'],
             );
           },

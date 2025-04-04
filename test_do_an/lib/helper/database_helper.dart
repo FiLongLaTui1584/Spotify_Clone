@@ -268,6 +268,17 @@ class DatabaseHelper {
     return artists;
   }
 
+  // Hàm trả về số lượng nghệ sĩ đang theo dõi
+  Future<int> getFollowedArtistsCount(int userId) async {
+    final db = await database;
+    List<Map<String, dynamic>> result = await db.query(
+      'followed_artists',
+      where: 'userId = ?',
+      whereArgs: [userId],
+    );
+    return result.length;
+  }
+
   Future<List<Map<String, dynamic>>> getSongsByArtist(int artistId) async {
     final db = await database;
     List<Map<String, dynamic>> songs = await db.query(
@@ -288,6 +299,40 @@ class DatabaseHelper {
     return albums;
   }
 
+  Future<List<Map<String, dynamic>>> getRandomArtistAlbums(
+      {int limit = 4}) async {
+    final db = await database;
+    List<Map<String, dynamic>> albums = await db.query(
+      'artist_albums',
+      orderBy: 'RANDOM()',
+      limit: limit, // Lấy ngẫu nhiên 4 album
+    );
+
+    List<Map<String, dynamic>> result = [];
+    for (var album in albums) {
+      // Lấy thông tin nghệ sĩ từ artistId
+      List<Map<String, dynamic>> artists = await db.query(
+        'artists',
+        where: 'id = ?',
+        whereArgs: [album['artistId']],
+      );
+      String artistName =
+          artists.isNotEmpty ? artists.first['name'] : 'Unknown Artist';
+      String? artistAvatar =
+          artists.isNotEmpty ? artists.first['avatar'] : null;
+
+      result.add({
+        'id': album['id'],
+        'artistId': album['artistId'],
+        'name': album['name'],
+        'avatar': album['avatar'], // Có thể null
+        'artistName': artistName,
+        'artistAvatar': artistAvatar,
+      });
+    }
+    return result;
+  }
+
   Future<Map<String, dynamic>?> getArtistByName(String name) async {
     final db = await database;
     List<Map<String, dynamic>> artists = await db.query(
@@ -298,12 +343,12 @@ class DatabaseHelper {
     return artists.isNotEmpty ? artists.first : null;
   }
 
-  Future<List<Map<String, dynamic>>> getRandomSongs() async {
+  Future<List<Map<String, dynamic>>> getRandomSongs({int limit = 5}) async {
     final db = await database;
     List<Map<String, dynamic>> songs = await db.query(
       'songs',
       orderBy: 'RANDOM()',
-      limit: 5,
+      limit: limit, // Sử dụng tham số limit
     );
 
     List<Map<String, dynamic>> result = [];
