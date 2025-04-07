@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:test_do_an/helper/database_helper.dart';
 import 'package:test_do_an/helper/user_session.dart';
 import 'package:test_do_an/page/sign_up.dart';
+import 'package:test_do_an/page/reset_password_screen.dart';
 
 class SignIn extends StatefulWidget {
   const SignIn({super.key});
@@ -60,7 +61,9 @@ class _SignInState extends State<SignIn> {
               _buildPasswordField(size.width),
               SizedBox(height: size.height * 0.02),
               _buildSignInButton(size.width),
-              SizedBox(height: size.height * 0.05),
+              SizedBox(height: 25),
+              _buildForgotPasswordText(context),
+              SizedBox(height: 40),
               _buildAccountQuestion(),
               _buildSignUpButton(context),
             ],
@@ -73,14 +76,18 @@ class _SignInState extends State<SignIn> {
   Widget _buildLogo(double width) => Container(
         width: 70,
         height: 70,
-        child: Center(child: Image.asset('assets/images/logo.png', fit: BoxFit.fill)),
+        child: Center(
+            child: Image.asset('assets/images/logo.png', fit: BoxFit.fill)),
       );
 
   Widget _buildTitle() => Text(
         'Đăng nhập vào Spotifree',
         textAlign: TextAlign.center,
         style: TextStyle(
-            color: Colors.white, fontFamily: 'Arial', fontSize: 30, fontWeight: FontWeight.bold),
+            color: Colors.white,
+            fontFamily: 'Arial',
+            fontSize: 30,
+            fontWeight: FontWeight.bold),
       );
 
   Widget _buildEmailField(double width) => FractionallySizedBox(
@@ -99,7 +106,8 @@ class _SignInState extends State<SignIn> {
                 child: SizedBox(
                   width: 25,
                   height: 25,
-                  child: Image.asset('assets/images/email_icon.png', fit: BoxFit.fill),
+                  child: Image.asset('assets/images/email_icon.png',
+                      fit: BoxFit.fill),
                 ),
               ),
               Expanded(
@@ -107,11 +115,14 @@ class _SignInState extends State<SignIn> {
                   controller: _emailController,
                   decoration: InputDecoration(
                     hintText: 'Email',
-                    hintStyle: TextStyle(color: Colors.grey, fontFamily: 'Arial', fontSize: 15),
+                    hintStyle: TextStyle(
+                        color: Colors.grey, fontFamily: 'Arial', fontSize: 15),
                     border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 15, vertical: 10),
                   ),
-                  style: TextStyle(color: Colors.white, fontFamily: 'Arial', fontSize: 15),
+                  style: TextStyle(
+                      color: Colors.white, fontFamily: 'Arial', fontSize: 15),
                   keyboardType: TextInputType.emailAddress,
                 ),
               ),
@@ -136,7 +147,8 @@ class _SignInState extends State<SignIn> {
                 child: SizedBox(
                   width: 25,
                   height: 25,
-                  child: Image.asset('assets/images/password_icon.png', fit: BoxFit.fill),
+                  child: Image.asset('assets/images/password_icon.png',
+                      fit: BoxFit.fill),
                 ),
               ),
               Expanded(
@@ -144,11 +156,14 @@ class _SignInState extends State<SignIn> {
                   controller: _passwordController,
                   decoration: InputDecoration(
                     hintText: 'Mật khẩu',
-                    hintStyle: TextStyle(color: Colors.grey, fontFamily: 'Arial', fontSize: 15),
+                    hintStyle: TextStyle(
+                        color: Colors.grey, fontFamily: 'Arial', fontSize: 15),
                     border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 15, vertical: 10),
                   ),
-                  style: TextStyle(color: Colors.white, fontFamily: 'Arial', fontSize: 15),
+                  style: TextStyle(
+                      color: Colors.white, fontFamily: 'Arial', fontSize: 15),
                   obscureText: true,
                 ),
               ),
@@ -157,6 +172,24 @@ class _SignInState extends State<SignIn> {
         ),
       );
 
+// Widget mới cho dòng "Bạn quên mật khẩu?"
+  Widget _buildForgotPasswordText(BuildContext context) => GestureDetector(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => ResetPasswordScreen()),
+          );
+        },
+        child: Text(
+          'Bạn quên mật khẩu?',
+          style: TextStyle(
+            color: Colors.white,
+            fontFamily: 'Arial',
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      );
   Widget _buildSignInButton(double width) => FractionallySizedBox(
         widthFactor: 0.8,
         child: GestureDetector(
@@ -184,11 +217,13 @@ class _SignInState extends State<SignIn> {
 
   Widget _buildAccountQuestion() => Text(
         'Bạn chưa có tài khoản?',
-        style: TextStyle(color: Colors.white, fontFamily: 'Arial', fontSize: 15),
+        style:
+            TextStyle(color: Colors.white, fontFamily: 'Arial', fontSize: 15),
       );
 
   Widget _buildSignUpButton(BuildContext context) => GestureDetector(
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SignUp())),
+        onTap: () => Navigator.push(
+            context, MaterialPageRoute(builder: (_) => SignUp())),
         child: Text(
           'Đăng ký',
           style: TextStyle(

@@ -15,10 +15,10 @@ class CustomBottomNav extends StatelessWidget {
     return Container(
       color: Color.fromRGBO(18, 18, 18, 1),
       padding: const EdgeInsets.only(
-        left: 20.0,
-        right: 20.0,
-        top: 15.0,
-        bottom: 30.0,
+        left: 0.0,
+        right: 0.0,
+        top: 8.0,
+        bottom: 10.0,
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -47,15 +47,15 @@ class CustomBottomNav extends StatelessWidget {
         children: <Widget>[
           Image.asset(
             isSelected ? selectedImagePath : imagePath,
-            width: 24,
-            height: 24,
+            width: 20,
+            height: 20,
           ),
           SizedBox(height: 10),
           Text(
             title,
             style: TextStyle(
               color: isSelected ? Colors.white : Colors.white60,
-              fontSize: 15,
+              fontSize: 10,
               fontFamily: 'Arial',
             ),
           ),

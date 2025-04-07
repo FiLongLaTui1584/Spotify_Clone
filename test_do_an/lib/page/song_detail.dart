@@ -3,7 +3,6 @@ import 'package:test_do_an/helper/audio_player_manager.dart';
 import 'package:test_do_an/helper/database_helper.dart';
 import 'package:test_do_an/helper/user_session.dart';
 import 'package:test_do_an/page/artist_info.dart';
-import 'package:just_audio/just_audio.dart';
 import 'dart:convert';
 import 'package:palette_generator/palette_generator.dart';
 
@@ -351,7 +350,7 @@ class _SongDetailPageState extends State<SongDetailPage> {
             onPressed: () => Navigator.pop(context),
           ),
           title: Text(
-            _audioManager.currentSong?['title'] ?? 'NOLOVENOLIFE',
+            _audioManager.currentSong?['title'] ?? '??????',
             style: TextStyle(color: Colors.white, fontSize: 15),
           )),
       body: SingleChildScrollView(
@@ -367,14 +366,15 @@ class _SongDetailPageState extends State<SongDetailPage> {
                 child: Image.asset(
                   _audioManager.currentSong?['avatar'] ??
                       'assets/images/random.png',
-                  width: 418,
-                  height: 418,
+                  width: 350,
+                  height: 350,
                   fit: BoxFit.cover,
                 ),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 17),
+              padding:
+                  const EdgeInsets.only(left: 17, right: 10, top: 0, bottom: 0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -382,7 +382,7 @@ class _SongDetailPageState extends State<SongDetailPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        _audioManager.currentSong?['title'] ?? 'NOLOVENOLIFE',
+                        _audioManager.currentSong?['title'] ?? '??????',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 20,
@@ -390,7 +390,7 @@ class _SongDetailPageState extends State<SongDetailPage> {
                         ),
                       ),
                       Text(
-                        _audioManager.currentSong?['artist'] ?? 'HIEUTHUHAI',
+                        _audioManager.currentSong?['artist'] ?? '??????',
                         style: TextStyle(color: Colors.white70, fontSize: 14),
                       ),
                     ],
@@ -415,7 +415,7 @@ class _SongDetailPageState extends State<SongDetailPage> {
                     data: SliderTheme.of(context).copyWith(
                       thumbShape: RoundSliderThumbShape(enabledThumbRadius: 0),
                       overlayShape: RoundSliderOverlayShape(overlayRadius: 0),
-                      trackHeight: 6,
+                      trackHeight: 9,
                     ),
                     child: Slider(
                       value: _currentTime,

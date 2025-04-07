@@ -27,7 +27,9 @@ class _SignUpState extends State<SignUp> {
       builder: (context) {
         return Padding(
           padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom, // Điều chỉnh khi bàn phím xuất hiện
+            bottom: MediaQuery.of(context)
+                .viewInsets
+                .bottom, // Điều chỉnh khi bàn phím xuất hiện
             left: 16,
             right: 16,
             top: 16,
@@ -74,7 +76,8 @@ class _SignUpState extends State<SignUp> {
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Color(0xFF1FD662),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(100)),
                   padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                 ),
                 child: Text(
@@ -97,15 +100,18 @@ class _SignUpState extends State<SignUp> {
 
   // Hàm xử lý đăng ký sau khi có tên
   void _completeSignUp(String email, String password, String name) async {
-    int result = await _dbHelper.registerUser(email, password, name, null); // Avatar để null vì chưa tích hợp
+    int result = await _dbHelper.registerUser(
+        email, password, name, null); // Avatar để null vì chưa tích hợp
     if (result != -1) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Đăng ký thành công! Vui lòng đăng nhập')),
       );
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => SignIn()));
+      Navigator.pushReplacement(
+          context, MaterialPageRoute(builder: (_) => SignIn()));
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Đăng ký thất bại: Email đã tồn tại hoặc lỗi khác')),
+        SnackBar(
+            content: Text('Đăng ký thất bại: Email đã tồn tại hoặc lỗi khác')),
       );
     }
   }
@@ -159,14 +165,18 @@ class _SignUpState extends State<SignUp> {
   Widget _buildLogo(double width) => Container(
         width: 70,
         height: 70,
-        child: Center(child: Image.asset('assets/images/logo.png', fit: BoxFit.cover)),
+        child: Center(
+            child: Image.asset('assets/images/logo.png', fit: BoxFit.cover)),
       );
 
   Widget _buildTitle() => Text(
         'Đăng ký để bắt đầu nghe',
         textAlign: TextAlign.center,
         style: TextStyle(
-            color: Colors.white, fontFamily: 'Arial', fontSize: 30, fontWeight: FontWeight.bold),
+            color: Colors.white,
+            fontFamily: 'Arial',
+            fontSize: 30,
+            fontWeight: FontWeight.bold),
       );
 
   Widget _buildEmailField(double width) => FractionallySizedBox(
@@ -185,7 +195,8 @@ class _SignUpState extends State<SignUp> {
                 child: SizedBox(
                   width: 25,
                   height: 25,
-                  child: Image.asset('assets/images/email_icon.png', fit: BoxFit.fill),
+                  child: Image.asset('assets/images/email_icon.png',
+                      fit: BoxFit.fill),
                 ),
               ),
               Expanded(
@@ -193,11 +204,14 @@ class _SignUpState extends State<SignUp> {
                   controller: _emailController,
                   decoration: InputDecoration(
                     hintText: 'Email',
-                    hintStyle: TextStyle(color: Colors.grey, fontFamily: 'Arial', fontSize: 15),
+                    hintStyle: TextStyle(
+                        color: Colors.grey, fontFamily: 'Arial', fontSize: 15),
                     border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 15, vertical: 10),
                   ),
-                  style: TextStyle(color: Colors.white, fontFamily: 'Arial', fontSize: 15),
+                  style: TextStyle(
+                      color: Colors.white, fontFamily: 'Arial', fontSize: 15),
                   keyboardType: TextInputType.emailAddress,
                 ),
               ),
@@ -222,7 +236,8 @@ class _SignUpState extends State<SignUp> {
                 child: SizedBox(
                   width: 25,
                   height: 25,
-                  child: Image.asset('assets/images/password_icon.png', fit: BoxFit.fill),
+                  child: Image.asset('assets/images/password_icon.png',
+                      fit: BoxFit.fill),
                 ),
               ),
               Expanded(
@@ -230,11 +245,14 @@ class _SignUpState extends State<SignUp> {
                   controller: _passwordController,
                   decoration: InputDecoration(
                     hintText: 'Mật khẩu',
-                    hintStyle: TextStyle(color: Colors.grey, fontFamily: 'Arial', fontSize: 15),
+                    hintStyle: TextStyle(
+                        color: Colors.grey, fontFamily: 'Arial', fontSize: 15),
                     border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 15, vertical: 10),
                   ),
-                  style: TextStyle(color: Colors.white, fontFamily: 'Arial', fontSize: 15),
+                  style: TextStyle(
+                      color: Colors.white, fontFamily: 'Arial', fontSize: 15),
                   obscureText: true,
                 ),
               ),
@@ -270,11 +288,13 @@ class _SignUpState extends State<SignUp> {
 
   Widget _buildAccountQuestion() => Text(
         'Bạn đã có tài khoản?',
-        style: TextStyle(color: Colors.white, fontFamily: 'Arial', fontSize: 15),
+        style:
+            TextStyle(color: Colors.white, fontFamily: 'Arial', fontSize: 15),
       );
 
   Widget _buildLoginButton(BuildContext context) => GestureDetector(
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SignIn())),
+        onTap: () => Navigator.push(
+            context, MaterialPageRoute(builder: (_) => SignIn())),
         child: Text(
           'Đăng nhập',
           style: TextStyle(

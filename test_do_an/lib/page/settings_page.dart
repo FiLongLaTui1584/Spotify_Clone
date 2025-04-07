@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:test_do_an/page/firstPage.dart';
 
 class SettingsPage extends StatelessWidget {
   @override

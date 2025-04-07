@@ -98,6 +98,16 @@ class DatabaseHelper {
       onUpgrade: (db, oldVersion, newVersion) async {},
     );
   }
+  // Phương thức mới để lấy thông tin user dựa trên email (username)
+  Future<Map<String, dynamic>?> getUserByEmail(String email) async {
+    final db = await database;
+    List<Map<String, dynamic>> result = await db.query(
+      'users',
+      where: 'username = ?', // username ở đây là email
+      whereArgs: [email],
+    );
+    return result.isNotEmpty ? result.first : null;
+  }
 
   Future<int> registerUser(
       String username, String password, String name, String? avatar) async {

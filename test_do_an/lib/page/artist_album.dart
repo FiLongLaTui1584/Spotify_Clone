@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:test_do_an/helper/audio_player_manager.dart';
 import 'package:test_do_an/helper/database_helper.dart';
 import 'package:test_do_an/helper/user_session.dart';
+import 'dart:math'; // Thêm để tạo số ngẫu nhiên
 
 class Artist_Album_Detail_Page extends StatefulWidget {
   final int artistId;
@@ -30,6 +31,7 @@ class _Artist_Album_Detail_PageState extends State<Artist_Album_Detail_Page> {
   bool _isLoading = false;
   Map<int, bool> _isFavoriteMap =
       {}; // Lưu trạng thái yêu thích của từng bài hát
+  List<String> _fakePlayCounts = []; // Danh sách lượt nghe giả
 
   @override
   void initState() {
@@ -46,6 +48,12 @@ class _Artist_Album_Detail_PageState extends State<Artist_Album_Detail_Page> {
           await DatabaseHelper.instance.getSongsByArtist(widget.artistId);
       setState(() {
         songs = fetchedSongs;
+
+        // Tạo lượt nghe giả ngẫu nhiên cho từng bài hát
+        _fakePlayCounts = List.generate(
+          songs.length,
+          (index) => _generateFakePlayCount(),
+        );
       });
 
       // Kiểm tra trạng thái yêu thích cho từng bài hát
@@ -66,6 +74,16 @@ class _Artist_Album_Detail_PageState extends State<Artist_Album_Detail_Page> {
         _isLoading = false;
       });
     }
+  }
+
+  // Hàm tạo số lượt nghe giả ngẫu nhiên
+  String _generateFakePlayCount() {
+    // Tạo số ngẫu nhiên từ 100,000 đến 10,000,000
+    int playCount =
+        Random().nextInt(9900000) + 100000; // 100,000 đến 10,000,000
+    // Định dạng số với dấu phẩy
+    return playCount.toString().replaceAllMapped(
+        RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},');
   }
 
   Future<void> _toggleFavorite(int songId) async {
@@ -238,7 +256,7 @@ class _Artist_Album_Detail_PageState extends State<Artist_Album_Detail_Page> {
                                 _isFavoriteMap[song['id']] ?? false;
                             return Padding(
                               padding: const EdgeInsets.only(
-                                  left: 5, right: 15, top: 8, bottom: 8),
+                                  left: 5, right: 0, top: 8, bottom: 8),
                               child: Row(
                                 children: [
                                   Text(
@@ -283,7 +301,8 @@ class _Artist_Album_Detail_PageState extends State<Artist_Album_Detail_Page> {
                                                 fontSize: 15),
                                           ),
                                           Text(
-                                            '2,120,730,968', // Lượt nghe giả
+                                            _fakePlayCounts[
+                                                index], // Hiển thị lượt nghe giả
                                             style: TextStyle(
                                                 color: Colors.grey,
                                                 fontSize: 13),
