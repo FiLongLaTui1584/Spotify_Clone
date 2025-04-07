@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:test_do_an/helper/database_helper.dart';
+import 'package:test_do_an/page/sign_in.dart'; // Thêm import màn hình SignIn
 
 class NewPasswordScreen extends StatefulWidget {
   final String email;
@@ -57,15 +58,29 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
       backgroundColor: Color(0xFF121212), // Màu nền giống SignIn
       body: Stack(
         children: [
-          // Nút quay về
+          // Nút "Hủy"
           Positioned(
             top: size.height * 0.05,
             left: 16,
-            child: IconButton(
-              icon: Icon(Icons.arrow_back, color: Colors.white, size: 30),
-              onPressed: () {
-                Navigator.pop(context); // Quay lại màn hình trước
+            child: GestureDetector(
+              onTap: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (_) => SignIn()),
+                );
               },
+              child: Container(
+                padding: EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.grey[800],
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.close, // Biểu tượng dấu X
+                  color: Colors.white,
+                  size: 30,
+                ),
+              ),
             ),
           ),
           Center(
