@@ -17,7 +17,7 @@ class CustomBottomNav extends StatelessWidget {
       padding: const EdgeInsets.only(
         left: 0.0,
         right: 0.0,
-        top: 8.0,
+        top: 9.0,
         bottom: 10.0,
       ),
       child: Row(

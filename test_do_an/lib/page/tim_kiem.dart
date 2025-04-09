@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:test_do_an/page/category_detail.dart';
 import '../component/tim_kiem_gan_day.dart';
 import '/component/custom_music_bar.dart';
 import '/component/custom_drawer_nav.dart';
@@ -22,7 +23,8 @@ class _TimKiemState extends State<TimKiem> with AutomaticKeepAliveClientMixin {
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // Gọi super.build để AutomaticKeepAliveClientMixin hoạt động
+    super.build(
+        context); // Gọi super.build để AutomaticKeepAliveClientMixin hoạt động
 
     // Lấy thông tin từ UserSession
     String userName = UserSession.currentUser?['name'] ??
@@ -129,7 +131,7 @@ class _TimKiemState extends State<TimKiem> with AutomaticKeepAliveClientMixin {
       '1,229,115,451',
       '524,533,269',
       '324,123,456',
-      '124,987,654',   // Nhỏ nhất
+      '124,987,654', // Nhỏ nhất
     ];
 
     return Padding(
@@ -150,7 +152,8 @@ class _TimKiemState extends State<TimKiem> with AutomaticKeepAliveClientMixin {
           ),
           const SizedBox(height: 10),
           FutureBuilder<List<Map<String, dynamic>>>(
-            future: DatabaseHelper.instance.getRandomSongs(), // Sử dụng getRandomSongs để lấy 5 bài ngẫu nhiên
+            future: DatabaseHelper.instance
+                .getRandomSongs(), // Sử dụng getRandomSongs để lấy 5 bài ngẫu nhiên
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return Center(child: CircularProgressIndicator());
@@ -180,7 +183,8 @@ class _TimKiemState extends State<TimKiem> with AutomaticKeepAliveClientMixin {
                       'rank': '${index + 1}',
                       'image': song['avatar'] ?? 'assets/images/random.png',
                       'title': song['title'],
-                      'plays': fakePlays[index], // Gán lượt nghe giả theo thứ tự giảm dần
+                      'plays': fakePlays[
+                          index], // Gán lượt nghe giả theo thứ tự giảm dần
                     },
                     song['id'], // Truyền id của bài hát
                   );
@@ -214,7 +218,8 @@ class _TimKiemState extends State<TimKiem> with AutomaticKeepAliveClientMixin {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(song['title']!,
-                      style: const TextStyle(color: Colors.white, fontSize: 16)),
+                      style:
+                          const TextStyle(color: Colors.white, fontSize: 16)),
                   Text(song['plays']!,
                       style: const TextStyle(color: Colors.grey, fontSize: 14)),
                 ],
@@ -231,44 +236,30 @@ class _TimKiemState extends State<TimKiem> with AutomaticKeepAliveClientMixin {
     final List<Map<String, dynamic>> categories = [
       {
         'title': 'Hip-hop',
-        'image': 'assets/images/random.png',
+        'image': 'assets/images/hiphop.png',
         'color': Colors.brown
       },
       {
         'title': 'V-Pop',
-        'image': 'assets/images/random.png',
+        'image': 'assets/images/vpop.png',
         'color': Colors.blueGrey
       },
       {
         'title': 'K-Pop',
-        'image': 'assets/images/random.png',
+        'image': 'assets/images/kpop.png',
         'color': Colors.purple
       },
       {
         'title': 'US-UK',
-        'image': 'assets/images/random.png',
+        'image': 'assets/images/usuk.png',
         'color': Colors.grey
       },
-      {
-        'title': 'Rock',
-        'image': 'assets/images/random.png',
-        'color': Colors.red
-      },
+      {'title': 'Rock', 'image': 'assets/images/rock.png', 'color': Colors.red},
       {
         'title': 'Jazz',
-        'image': 'assets/images/random.png',
+        'image': 'assets/images/jazz.png',
         'color': Colors.orange
-      },
-      {
-        'title': 'EDM',
-        'image': 'assets/images/random.png',
-        'color': Colors.teal
-      },
-      {
-        'title': 'Classical',
-        'image': 'assets/images/random.png',
-        'color': Colors.indigo
-      },
+      }
     ];
 
     return Padding(
@@ -307,34 +298,49 @@ class _TimKiemState extends State<TimKiem> with AutomaticKeepAliveClientMixin {
   }
 
   Widget _buildCategoryItem(Map<String, dynamic> category) {
-    return Container(
-      decoration: BoxDecoration(
-        color: category['color'],
-        borderRadius: BorderRadius.circular(15),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            category['title'],
-            style: const TextStyle(
-                color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          Transform.rotate(
-            angle: 0.5236, // 30 độ = 0.5236 radian
-            child: ClipRRect(
-              borderRadius:
-                  BorderRadius.circular(5), // Điều chỉnh độ bo tròn tại đây
-              child: Image.asset(
-                category['image'],
-                width: 60,
-                height: 60,
-                fit: BoxFit.cover,
-              ),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CategoryDetailPage(
+              categoryName: category['title'],
+              categoryAvatar: category['image'],
             ),
           ),
-        ],
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: category['color'],
+          borderRadius: BorderRadius.circular(15),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              category['title'],
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold),
+            ),
+            Transform.rotate(
+              angle: 0.5, // 30 độ = 0.5236 radian
+              child: ClipRRect(
+                borderRadius:
+                    BorderRadius.circular(5), // Điều chỉnh độ bo tròn tại đây
+                child: Image.asset(
+                  category['image'],
+                  width: 65,
+                  height: 65,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
